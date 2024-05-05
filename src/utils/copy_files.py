@@ -60,5 +60,5 @@ dest_dirs = [
 ]
 num_images = 1250
 
-for source_dir, dest_dir in zip(source_dirs, dest_dirs):
-    copy_random_images(source_dir, dest_dir, num_images)
+# for source_dir, dest_dir in zip(source_dirs, dest_dirs):
+#     copy_random_images(source_dir, dest_dir, num_images)

@@ -1,30 +1,29 @@
 import cv2
 import dlib
-from inspect import currentframe, getframeInfo
+from inspect import currentframe, getframeinfo
 import math
-import sys # noqa
+import sys  # noqa
 
 FIRST_FACE: int = 0
 
 
 # Initialize video capture object from webcam
-cap = cv2.VideoCapture("VID_4.mp4")
-
+cap = cv2.VideoCapture(0)
+cap.set(propId=cv2.CAP_PROP_FRAME_WIDTH, value=2560)
+cap.set(propId=cv2.CAP_PROP_FRAME_HEIGHT, value=1080)
 # Load pre-trained Haar cascade classifier for face detection
 face_cascade = cv2.CascadeClassifier(
-    r"C:\Users\scher\AppData\Local\Programs\Python\Python39\Lib\site-packages\cv2\data\haarcascade_frontalface_default.xml"
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
-eye_cascade = cv2.CascadeClassifier(
-    r"C:\Users\scher\AppData\Local\Programs\Python\Python39\Lib\site-packages\cv2\data\haarcascade_eye.xml"
-)
-
+eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
 # Tracker object (will be initialized later)
 tracker = None
 
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
-
+    if not ret:
+        break
     # Convert frame to grayscale for efficiency
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -41,7 +40,7 @@ while True:
 
                 tracker.start_track(gray, rec)
         except Exception as e:
-            frameInfo = getframeInfo(currentframe())
+            frameInfo = getframeinfo(currentframe())
             print(f"File:${frameInfo.filename}, line ${frameInfo.lineno +1 }: ${e}")
 
     # If tracker is initialized, use it to track faces
@@ -63,7 +62,7 @@ while True:
                 2,
             )
         except Exception as e:
-            frameInfo = getframeInfo(currentframe())
+            frameInfo = getframeinfo(currentframe())
             print(f"File:${frameInfo.filename}, line ${frameInfo.lineno + 1}: ${e}")
 
     # Display resulting frame

@@ -3,7 +3,8 @@ import cv2 as cv
 import dlib
 import inspect
 import pyautogui as pg
-from utils import print_camera_properties, move_mouse
+
+from src.utils import print_camera_properties, move_mouse
 # from LK_Optical_flow import LK
 
 
@@ -31,7 +32,7 @@ cap.set(propId=cv.CAP_PROP_FRAME_HEIGHT, value=1080)
 if not cap:
     print("Cannot open camera")
     exit()
-print_camera_properties()
+print_camera_properties(cap=cap)
 
 
 # if cap.isOpened():

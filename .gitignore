@@ -1,2 +1,7 @@
 # Untracked folders
-Eye dataset
+*.pyc
+Eye dataset/
+ibug_300W_large_face_landmark_dataset/
+models/
+__pychache__/
+.vscode/

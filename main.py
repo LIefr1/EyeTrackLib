@@ -1,87 +1,64 @@
-import torch
 import cv2
-from PIL import Image  # For image conversion
-import torchvision.transforms as transforms
-from torchvision.models import resnet18
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import time
+import torchvision.transforms.functional as TF
+from tutorial.model import Network
+from PIL import Image
+import sys
+from tutorial.train import Trainer
+from tutorial.Landmark_dataset import FaceLandmarksDataset
+from tutorial.transforms import Transforms
+import torch.optim as optim
 
+if __name__ == "__main__":
+    model = Network(model_name="resnet18")
+    dataset = FaceLandmarksDataset(Transforms())
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)
+    trainer.train()
+    # face_cascade = cv2.CascadeClassifier(
+    #     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    # )
 
-def preprocess_image(image):
-    """
-    Preprocess the image for the model.
+    # cap = cv2.VideoCapture(0)
+    # cap.set(propId=cv2.CAP_PROP_FRAME_WIDTH, value=1920)
+    # cap.set(propId=cv2.CAP_PROP_FRAME_HEIGHT, value=1080)
 
-    Args:
-        image: OpenCV BGR image frame.
+    # # best_network = Network(model_name="resnet50")
+    # # best_network.load_state_dict(torch.load("models/face_landmarks_resnet50.pth"))
+    # best_network = Network(model_name="resnet18")
+    # best_network.load_state_dict(torch.load("models/face_landmarks.pth"))
+    # best_network.eval()
 
-    Returns:
-        A PyTorch tensor representing the preprocessed image.
-    """
-    # Convert BGR to RGB
-    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    # Convert to PIL image
-    pil_image = Image.fromarray(rgb_image)
-    # Create a PyTorch tensor with desired transformations (adjust as needed) and return it
-    return transforms.Compose(
-        [
-            transforms.Resize(256),  # Resize to a specific size
-            transforms.CenterCrop(224),  # Center crop to a specific size
-            transforms.ToTensor(),  # Convert to PyTorch tensor
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),  # Normalize based on model requirements
-        ]
-    )(pil_image)
+    # while True:
+    #     ret, frame = cap.read()
+    #     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #     display = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #     height, width, _ = frame.shape
+    #     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    #     all_landmarks = []
+    #     for x, y, w, h in faces:
+    #         image = gray[y : y + h, x : x + w]
+    #         image = TF.resize(Image.fromarray(image), size=(224, 224))
+    #         image = TF.to_tensor(image)
+    #         image = TF.normalize(image, [0.5], [0.5])
 
+    #         with torch.no_grad():
+    #             landmarks = best_network(image.unsqueeze(0))
 
-model = resnet18(num_classes=4)
-
-
-model.load_state_dict(torch.load("B:/EyeTrackLib/models/model_conv18_3.pt"))
-model.eval()  # Set the model to evaluation mode
-
-cap = cv2.VideoCapture(0)
-
-while True:
-    # Capture frame from webcam
-    ret, frame = cap.read()
-
-    # Check if frame is captured successfully
-    if not ret:
-        print("Error: Frame not captured!")
-        break
-
-    # Preprocess the captured frame
-    preprocessed_image = preprocess_image(frame)
-
-    # Add a batch dimension for the model (assuming it expects batches)
-    preprocessed_image = preprocessed_image.unsqueeze(0)
-
-    # Move the tensor to the device (CPU or GPU)
-    # preprocessed_image = preprocessed_image.to(model.device)
-
-    # Perform inference
-    with torch.no_grad():
-        outputs = model(preprocessed_image)
-
-    # Get the predicted class (assuming model outputs class probabilities)
-    _, predicted_class = torch.max(outputs.data, 1)
-    predicted_class = predicted_class.item()
-
-    # Display the frame and predicted class
-    cv2.putText(
-        frame,
-        f"Predicted Class: {predicted_class}",
-        (10, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 255, 0),
-        2,
-    )
-    cv2.imshow("Webcam Feed with Prediction", frame)
-
-    # Exit on 'q' key press
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-# Release resources
-cap.release()
-cv2.destroyAllWindows()
+    #         landmarks = (landmarks.view(68, 2).cpu().detach().numpy() + 0.5) * np.array(
+    #             [[w, h]]
+    #         ) + np.array([[x, y]])
+    #         all_landmarks.append(landmarks)
+    #     # sys.exit()
+    #     # sys.exit()
+    #     for x, y in all_landmarks[0]:
+    #         cv2.circle(frame, (int(x), int(y)), 2, (0, 255, 0), -1)
+    #     cv2.imshow("Output", frame)
+    #     k = cv2.waitKey(5) & 0xFF
+    #     if k == 27:
+    #         break
+    # cv2.destroyAllWindows()
+    # cap.release()
