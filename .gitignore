@@ -1,7 +1,11 @@
-# Untracked folders
+
 *.pyc
-Eye dataset/
-ibug_300W_large_face_landmark_dataset/
+datasets/
 models/
-__pychache__/
+*__pychache__*
 .vscode/
+*.tar
+*.gz
+*.filepart
+*.log
+src/random(temp)/

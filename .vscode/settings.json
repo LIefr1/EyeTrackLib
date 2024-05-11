@@ -1,5 +1,8 @@
 {
     "cSpell.words": [
         "torchvision"
+    ],
+    "cSpell.enableFiletypes": [
+        "cuda-cpp"
     ]
 }

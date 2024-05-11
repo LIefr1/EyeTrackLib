@@ -1,4 +1,4 @@
-name: eye-tracking
+name: .venv
 channels:
   - pytorch
   - nvidia
