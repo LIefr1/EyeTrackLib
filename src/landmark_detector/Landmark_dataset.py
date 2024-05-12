@@ -51,6 +51,6 @@ class FaceLandmarksDataset(Dataset):
         return image, landmarks
 
 
-if __name__ == "__main__":
-    dataset = FaceLandmarksDataset()
-    print(len(dataset))
+# if __name__ == "__main__":
+#     dataset = FaceLandmarksDataset()
+#     print(len(dataset))
