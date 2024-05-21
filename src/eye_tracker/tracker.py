@@ -28,7 +28,7 @@ class Tracker:
             maxLevel=2,
             criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
         )
-        self.mask = np.zeros_like(self.prev_frame)
+
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(model, path)
         self.model.eval()
@@ -102,6 +102,15 @@ class Tracker:
             },
         }
 
+    def get_all_boxes(self, frame):
+        faces = self.get_faces()
+        all_boxes = []
+        for x, y, w, h in faces:
+            all_landmarks = self.get_landmarks(x, y, w, h, frame)
+            for landmarks in all_landmarks:
+                eye_boxes = self.get_eye_boxes(frame, landmarks)
+                all_boxes.append(eye_boxes)
+
     def _get_initial_points(self):
         faces = self.get_faces(self.prev_frame)
         all_boxes = []
@@ -111,18 +120,29 @@ class Tracker:
                 eye_boxes = self.get_eye_boxes(self.prev_frame, landmarks)
                 all_boxes.append(eye_boxes)
         gray = cv2.cvtColor(self.prev_frame, cv2.COLOR_BGR2GRAY)
-        all_points = []
+        mask = np.zeros_like(gray)
+        ini_points = []
         for box in all_boxes:
-            cropped_gray = gray[
+            mask_box = np.zeros_like(gray)
+            mask_box[
                 box["left_eye"]["top_left"][1] : box["left_eye"]["bottom_right"][1],
                 box["left_eye"]["top_left"][0] : box["left_eye"]["bottom_right"][0],
-            ]
-            all_points.append(
-                cv2.goodFeaturesToTrack(cropped_gray, mask=None, **self.feature_params)
-            )
-        return all_points
+            ] = 255
+            mask = cv2.bitwise_or(mask, mask_box)
+            cropped_gray = cv2.bitwise_and(gray, mask)
+            points = cv2.findNonZero(cropped_gray)
+            if points is not None:
+                points = points.reshape(-1, 2)
+                ini_points.extend(points)
+        if len(ini_points) == 0:
+            print("No points to track")
+        return []
 
-    def optical_flow(self, frame):
+        prevPts = np.array(ini_points, dtype=np.float32)
+
+        return prevPts
+
+    def optical_flow_LK(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         all_points = []
         initial_points = self._get_initial_points()
@@ -136,15 +156,34 @@ class Tracker:
                 all_points.append({"new": tracked_points, "old": prev_points})
         return all_points
 
+    def draw_LK(self, idx, frame):
+        all_points = self.optical_flow_LK(frame)
+        for i, (new, old) in enumerate(
+            zip(all_points[idx]["new"], all_points[idx]["old"])
+        ):
+            a, b = new.ravel()
+            c, d = old.ravel()
+            mask = cv2.line(
+                self.mask,
+                (int(a), int(b)),
+                (int(c), int(d)),
+                self.color[i].tolist(),
+                2,
+            )
+            cv2.circle(frame, (int(a), int(b)), 5, self.color[i].tolist(), -1)
+            return cv2.add(frame, mask)
+
     def get_position(self):
         raise NotImplementedError
 
     def draw(self, frame):
         faces = self.get_faces(frame)
+        all_points = self.optical_flow_LK(frame)
+        print(all_points)
         for x, y, w, h in faces:
             all_landmarks = self.get_landmarks(x, y, w, h, frame)
-            all_points = self.optical_flow(frame)
             for idx, landmarks in enumerate(all_landmarks):
+                eye_boxes = self.get_eye_boxes(frame, landmarks)
                 for i, (new, old) in enumerate(
                     zip(all_points[idx]["new"], all_points[idx]["old"])
                 ):
@@ -158,7 +197,7 @@ class Tracker:
                         2,
                     )
                     cv2.circle(frame, (int(a), int(b)), 5, self.color[i].tolist(), -1)
-                eye_boxes = self.get_eye_boxes(frame, landmarks)
+                    cv2.add(frame, mask)
                 cv2.rectangle(
                     frame,
                     eye_boxes["left_eye"]["top_left"],

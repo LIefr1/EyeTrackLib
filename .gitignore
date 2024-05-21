@@ -8,4 +8,6 @@ models/
 *.gz
 *.filepart
 *.log
+*.bz2
+*.dat
 src/random(temp)/
