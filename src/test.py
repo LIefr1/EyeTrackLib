@@ -3,6 +3,7 @@ import cv2 as cv
 
 # Initialize video capture
 cap = cv.VideoCapture(0)
+cap.set(cv.CAP_PROP_FPS, 30)
 if not cap.isOpened():
     raise Exception("Cannot open camera")
 
@@ -48,10 +49,14 @@ while True:
     mag, ang = cv.cartToPolar(flow_masked[..., 0], flow_masked[..., 1])
 
     # Create an HSV image with the optical flow
+    # Convert flow to HSV format, where H is the angle and S,V are the magnitude
+    # Normalize the magnitude values to the range [0, 255]
     hsv_masked = np.zeros_like(frame2, dtype=np.uint8)
-    hsv_masked[..., 1] = 255
-    hsv_masked[..., 0] = ang * 180 / np.pi / 2
-    hsv_masked[..., 2] = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)
+    hsv_masked[..., 1] = 255  # Saturation
+    hsv_masked[..., 0] = ang * 180 / np.pi / 2  # Hue (converted to degrees)
+    hsv_masked[..., 2] = cv.normalize(
+        mag, None, 0, 255, cv.NORM_MINMAX
+    )  # Value (magnitude)
 
     # Convert HSV image to BGR format for display
     bgr_masked = cv.cvtColor(hsv_masked, cv.COLOR_HSV2BGR)
@@ -59,10 +64,28 @@ while True:
     # Extract and print coordinates of significant flow vectors
     threshold = 1.2  # Threshold for magnitude of flow vectors
     y_indices, x_indices = np.where(mag > threshold)
-    coords = list(zip(x_indices, y_indices))
-    print("Significant flow vector coordinates within the face region:", coords)
+    if x_indices.size > 0 and y_indices.size > 0:
+        vectors = np.array((x_indices, y_indices))
+        print("Vectors", vectors)
+        result_vectors = np.sum(vectors, axis=0)
+        magnitude = np.linalg.norm(result_vectors)
+        if magnitude != 0:
+            cumulative_direction = result_vectors / magnitude
+            h = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
+            w = cap.get(cv.CAP_PROP_FRAME_WIDTH)
+            start_point = (int(w / 2), int(h / 2))
+            print("Start point", start_point)
+            end_point = (
+                int(start_point[0] + cumulative_direction[0] * 10),
+                int(start_point[1] + cumulative_direction[1] * 10),
+            )
+            cv.arrowedLine(bgr_masked, start_point, end_point, (0, 255, 0), 3)
 
-    # Display the resulting frame
+        np.set_printoptions(threshold=np.inf)
+        print("Magnitude:", magnitude)
+        print("Resultant Vector:", result_vectors)
+        print("Cumulative Direction:", cumulative_direction)
+
     cv.imshow("Optical Flow (Head Region)", bgr_masked)
 
     # Exit on ESC key press
