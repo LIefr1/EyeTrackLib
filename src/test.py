@@ -1,9 +1,12 @@
 import numpy as np
 import cv2 as cv
+import sys
 
 # Initialize video capture
 cap = cv.VideoCapture(0)
-cap.set(cv.CAP_PROP_FPS, 30)
+cap.set(cv.CAP_PROP_FPS, 5)
+# cap.set(propId=cv.CAP_PROP_FRAME_WIDTH, value=1920)
+# cap.set(propId=cv.CAP_PROP_FRAME_HEIGHT, value=1080)
 if not cap.isOpened():
     raise Exception("Cannot open camera")
 
@@ -25,7 +28,9 @@ rects = face_cascade.detectMultiScale(prvs, scaleFactor=1.1, minNeighbors=4)
 
 # Create a mask for the detected face
 mask = np.zeros_like(prvs, dtype=np.uint8)
+RECT_H, RECT_W = 0, 0
 for x, y, w, h in rects:
+    RECT_H, RECT_W = h, w
     cv.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
 
 while True:
@@ -46,6 +51,7 @@ while True:
     flow_masked[mask == 255] = flow[mask == 255]
 
     # Convert flow to polar coordinates (magnitude and angle)
+    # mag, ang = cv.cartToPolar(flow_masked[..., 0], flow_masked[..., 1])
     mag, ang = cv.cartToPolar(flow_masked[..., 0], flow_masked[..., 1])
 
     # Create an HSV image with the optical flow
@@ -66,8 +72,10 @@ while True:
     y_indices, x_indices = np.where(mag > threshold)
     if x_indices.size > 0 and y_indices.size > 0:
         vectors = np.array((x_indices, y_indices))
-        print("Vectors", vectors)
-        result_vectors = np.sum(vectors, axis=0)
+        # print("Vectors", vectors)
+        result_vectors = np.sum(vectors, axis=1) / len(vectors)
+        print("resilt_vectors", result_vectors)
+        # sys.exit()
         magnitude = np.linalg.norm(result_vectors)
         if magnitude != 0:
             cumulative_direction = result_vectors / magnitude
@@ -75,13 +83,21 @@ while True:
             w = cap.get(cv.CAP_PROP_FRAME_WIDTH)
             start_point = (int(w / 2), int(h / 2))
             print("Start point", start_point)
-            end_point = (
-                int(start_point[0] + cumulative_direction[0] * 10),
-                int(start_point[1] + cumulative_direction[1] * 10),
+            point = cumulative_direction * np.array([[w, h]])[0]
+            print("Point", point)
+            # end_point = (
+            #     int(start_point[0] + cumulative_direction[0] * 100),
+            #     int(start_point[1] + cumulative_direction[1] * 100),
+            # )
+            # cv.arrowedLine(bgr_masked, start_point, end_point, (0, 255, 0), 3)
+            cv.circle(
+                bgr_masked,
+                (int(point[0]), int(point[1])),
+                5,
+                (0, 255, 0),
+                -1,
             )
-            cv.arrowedLine(bgr_masked, start_point, end_point, (0, 255, 0), 3)
-
-        np.set_printoptions(threshold=np.inf)
+        # np.set_printoptions(threshold=np.inf)
         print("Magnitude:", magnitude)
         print("Resultant Vector:", result_vectors)
         print("Cumulative Direction:", cumulative_direction)

@@ -35,9 +35,7 @@ class Trainer:
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        file_handler = logging.FileHandler(
-            f"models/train_logs/train_log_{self.model_name}.log"
-        )
+        file_handler = logging.FileHandler(f"logs/train_log_{self.model_name}.log")
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
@@ -197,11 +195,3 @@ class Trainer:
         print(f"Total Elapsed Time : {time.time() - start_time} s")
         self.logger.info("Training Complete")
         self.logger.info(f"Total Elapsed Time : {time.time() - start_time} s")
-
-
-if __name__ == "__main__":
-    pass
-    # trainer = Trainer(model_name="resnet34", num_epochs=25)
-    # trainer.main()
-    # criterion = nn.MSELoss()
-    # optimizer = optim.Adam(model.parameters(), lr=0.0001)

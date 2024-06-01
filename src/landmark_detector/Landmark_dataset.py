@@ -6,15 +6,17 @@ import numpy as np
 
 
 class FaceLandmarksDataset(Dataset):
-    def __init__(self, transform=None):
-        tree = ET.parse("ibug_300W_large_face_landmark_dataset/eyes_only.xml")
+    def __init__(
+        self, transform=None, path="datasets\ibug\eyes_only.xml", root_dir="ibug"
+    ):
+        tree = ET.parse(path)
         root = tree.getroot()
 
         self.image_filenames = []
         self.landmarks = []
         self.crops = []
         self.transform = transform
-        self.root_dir = "ibug_300W_large_face_landmark_dataset"
+        self.root_dir = root_dir
 
         for filename in root[2]:
             self.image_filenames.append(
