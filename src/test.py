@@ -83,16 +83,23 @@ while True:
     bgr_masked = cv.cvtColor(hsv_masked, cv.COLOR_HSV2BGR)
     y_indices, x_indices = np.where(mag > threshold)
     if x_indices.size > 0 and y_indices.size > 0:
+        # vectors = np.array((x_indices, y_indices))
+        # result_vectors = np.sum(vectors, axis=1)
+        # magnitude = np.linalg.norm(result_vectors)
+        # print("Magnitude:", magnitude)
+        # if magnitude != 0:
+        #     cumulative_direction = result_vectors / magnitude
+        # print(
+        #     "result vectors", int(cumulative_direction[0]), int(cumulative_direction[1])
+        # )
         point = [np.max(x_indices), np.max(y_indices)]
         move_mouse_ct(
-            int(point[0]),
-            int(point[1]),
+            int(point[0] * 4.0),
+            int(point[1] * 1.6875),
         )
         # print("x_indices", x_indices)
         # print("y_indices", y_indices)
-        # vectors = np.array((x_indices, y_indices))
         # # print("Vectors", vectors)
-        # result_vectors = np.sum(vectors, axis=1) / len(vectors)
         # # print("resilt_vectors", result_vectors)
         # # sys.exit()
         # magnitude = np.linalg.norm(result_vectors)
