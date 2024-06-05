@@ -3,6 +3,7 @@ import numpy as np
 import dlib
 import ctypes as ct
 import screeninfo as si
+import sys
 
 
 def move_mouse_ct(x: int, y: int):
@@ -26,8 +27,45 @@ def get_eye_points(shape):
     return left_eye_pts, right_eye_pts
 
 
-cap = cv.VideoCapture(0)
+def get_eye_boxes(landmarks) -> dict:
+    left_eye = [
+        landmarks[36],
+        landmarks[37],
+        landmarks[38],
+        landmarks[39],
+        landmarks[40],
+        landmarks[41],
+    ]
+    right_eye = [
+        landmarks[42],
+        landmarks[43],
+        landmarks[44],
+        landmarks[45],
+        landmarks[46],
+        landmarks[47],
+    ]
 
+    left_eye_x = [point[0] for point in left_eye]
+    left_eye_y = [point[1] for point in left_eye]
+
+    right_eye_x = [point[0] for point in right_eye]
+    right_eye_y = [point[1] for point in right_eye]
+
+    return {
+        "left_eye": {
+            "top_left": (int(min(left_eye_x)), int(min(left_eye_y))),
+            "bottom_right": (int(max(left_eye_x)), int(max(left_eye_y))),
+        },
+        "right_eye": {
+            "top_left": (int(min(right_eye_x)), int(min(right_eye_y))),
+            "bottom_right": (int(max(right_eye_x)), int(max(right_eye_y))),
+        },
+    }
+
+
+cap = cv.VideoCapture(0)
+cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
 # params for ShiTomasi corner detection
 feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
 
@@ -59,14 +97,20 @@ else:
 # Create a mask image for drawing purposes
 mask = np.zeros_like(old_frame)
 
+frame_count = 0
+
 while True:
     ret, frame = cap.read()
+    frame_count += 1
+    print("Frame count: ", frame_count)
     if not ret:
         print("No frames grabbed!")
         break
-
+    np.set_printoptions(threshold=np.inf)
     frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
     WIDTH = si.get_monitors()[0].width
+
     # calculate optical flow
     if len(p0) > 0:
         p1, st, err = cv.calcOpticalFlowPyrLK(
@@ -75,7 +119,6 @@ while True:
         if p1 is not None:
             good_new = p1[st == 1]
             good_old = p0[st == 1]
-
             # draw the tracks
             for i, (new, old) in enumerate(zip(good_new, good_old)):
                 a, b = new.ravel()  # Flatten the array to a 1-dimensional array
@@ -87,14 +130,17 @@ while True:
                     color[i % len(color)].tolist(),
                     2,
                 )
+                boxes = get_eye_boxes(shape)
+                print(boxes)
 
-                move_mouse_ct(x=int(WIDTH - (a * 4.0)), y=int((b * 1.6875)))
+                # move_mouse_ct(x=int(WIDTH - (a * 4.0)), y=int((b * 1.6875)))
                 frame = cv.circle(
                     frame, (int(a), int(b)), 5, color[i % len(color)].tolist(), -1
                 )
-            img = cv.add(frame, mask)
 
-            cv.imshow("frame", img)
+            # img = cv.add(frame, mask)
+
+            cv.imshow("frame", frame)
 
             # Now update the previous frame and previous points
             old_gray = frame_gray.copy()
@@ -111,6 +157,17 @@ while True:
                 p0 = eye_pts.reshape(-1, 1, 2)
             else:
                 p0 = np.empty((0, 1, 2))
+    if frame_count % 3 == 0:
+        faces = detector(frame_gray)
+        if len(faces) > 0:
+            shape = predictor(frame_gray, faces[0])
+            left_eye_pts, right_eye_pts = get_eye_points(shape)
+            eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(
+                np.float32
+            )
+            p0 = eye_pts.reshape(-1, 1, 2)
+        else:
+            p0 = np.empty((0, 1, 2))
 
     k = cv.waitKey(30) & 0xFF
     if k == 27:
