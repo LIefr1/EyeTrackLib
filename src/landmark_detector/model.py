@@ -4,7 +4,7 @@ import torch
 from typing import Literal
 
 
-class Network(nn.Module):
+class LandmarkModel(nn.Module):
     def __init__(
         self,
         num_classes=136,
