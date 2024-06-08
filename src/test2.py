@@ -43,6 +43,47 @@ def get_eye_boxes(landmarks) -> dict:
     )
 
 
+def fit_elipse(eye_pts, frame):
+    left_eye_pts, right_eye_pts = eye_pts
+    left_eye_np = np.array(left_eye_pts, dtype=np.int32)
+    right_eye_np = np.array(right_eye_pts, dtype=np.int32)
+    ellipse_center_left = []
+    ellipse_center_right = []
+
+    # Create bounding boxes around the eyes
+    (x, y, w, h) = cv.boundingRect(left_eye_np)
+    left_eye_region = frame[y : y + h, x : x + w]
+    (x, y, w, h) = cv.boundingRect(right_eye_np)
+    right_eye_region = frame[y : y + h, x : x + w]
+
+    # Apply Canny edge detection
+    blurred_left_eye = cv.GaussianBlur(left_eye_region, (5, 5), 0)
+    edges_left_eye = cv.Canny(blurred_left_eye, 0, 0)
+    contours_left_eye, _ = cv.findContours(edges_left_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    if contours_left_eye:
+        largest_contour_left = max(contours_left_eye, key=cv.contourArea)
+        if len(largest_contour_left) >= 5:
+            ellipse = cv.fitEllipse(largest_contour_left)
+            ellipse_center_left = (
+                int(ellipse[0][0] + x),
+                int(ellipse[0][1] + y),
+            )  # Adjust position
+
+    blurred_right_eye = cv.GaussianBlur(right_eye_region, (5, 5), 0)
+    edges_right_eye = cv.Canny(blurred_right_eye, 0, 0)
+    contours_right_eye, _ = cv.findContours(edges_right_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    if contours_right_eye:
+        largest_contour_right = max(contours_right_eye, key=cv.contourArea)
+        if len(largest_contour_right) >= 5:
+            ellipse = cv.fitEllipse(largest_contour_right)
+            ellipse_center_right = (
+                int(ellipse[0][0] + x),
+                int(ellipse[0][1] + y),
+            )  # Adjust position
+
+    return ellipse_center_left, ellipse_center_right
+
+
 cap = cv.VideoCapture(0)
 # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
 # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
@@ -70,43 +111,12 @@ if len(faces) > 0:
     shape = predictor(old_gray, faces[0])
     print("shape: ", shape.parts())
     left_eye_pts, right_eye_pts = get_eye_points(shape)
-
-    left_eye_np = np.array(left_eye_pts, dtype=np.int32)
-    right_eye_np = np.array(right_eye_pts, dtype=np.int32)
-    # Create bounding boxes around the eyes
-    (x, y, w, h) = cv.boundingRect(left_eye_np)
-    left_eye_region = old_gray[y : y + h, x : x + w]
-    (x, y, w, h) = cv.boundingRect(right_eye_np)
-    right_eye_region = old_gray[y : y + h, x : x + w]
-    blurred_left_eye = cv.GaussianBlur(left_eye_region, (5, 5), 0)
-    edges_left_eye = cv.Canny(blurred_left_eye, 50, 150)
-    contours, _ = cv.findContours(edges_left_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    if contours:
-        largest_contour = max(contours, key=cv.contourArea)
-        if len(largest_contour) >= 5:
-            ellipse = cv.fitEllipse(largest_contour)
-            ellipse_center = (
-                int(ellipse[0][0] + x),
-                int(ellipse[0][1] + y),
-            )  # Adjust position
-
-    # Apply pupil tracking (ellipse fitting) within the right eye region
-    blurred_right_eye = cv.GaussianBlur(right_eye_region, (5, 5), 0)
-    edges_right_eye = cv.Canny(blurred_right_eye, 50, 150)
-    contours, _ = cv.findContours(edges_right_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    if contours:
-        if len(largest_contour) >= 5:
-            ellipse_center = (
-                int(ellipse[0][0] + x),
-                int(ellipse[0][1] + y),
-            )  # Adjust position
-
-    largest_contour = max(contours, key=cv.contourArea)
-    ellipse = cv.fitEllipse(largest_contour)
-    print("left eye points befour: ", left_eye_pts)
-    print("right eye points befour: ", right_eye_pts)
-    left_eye_pts = left_eye_pts.append([ellipse[0][0] + x, ellipse[0][1] + y])
-    right_eye_pts = right_eye_pts.append([ellipse[0][0] + x, ellipse[0][1] + y])
+    # print(fit_elipse((left_eye_pts, right_eye_pts)))
+    # sys.exit()
+    ellipses = fit_elipse((left_eye_pts, right_eye_pts), old_frame)
+    print("ellipses: ", ellipses)
+    left_eye_pts = np.append(left_eye_pts, ellipses[0])
+    right_eye_pts = np.append(right_eye_pts, ellipses[1])
     print("left eye points: ", left_eye_pts)
     print("right eye points: ", right_eye_pts)
     eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
@@ -118,7 +128,7 @@ if len(faces) > 0:
         "p0\n",
         p0,
     )
-    sys.exit()
+    # sys.exit()
 else:
     p0 = np.empty((0, 1, 2))
 
@@ -182,6 +192,11 @@ while True:
         if len(faces) > 0:
             shape = predictor(frame_gray, faces[0])
             left_eye_pts, right_eye_pts = get_eye_points(shape)
+
+            ellipses = fit_elipse((left_eye_pts, right_eye_pts), frame)
+            print("ellipses: ", ellipses)
+            left_eye_pts = np.append(left_eye_pts, ellipses[0])
+            right_eye_pts = np.append(right_eye_pts, ellipses[1])
             eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
             p0 = eye_pts.reshape(-1, 1, 2)
         else:
