@@ -27,11 +27,4 @@ def run():
 
 
 if __name__ == "__main__":
-    # model = Network(
-    #     model_name="resnet18",
-    # )
-    # dataset = FaceLandmarksDataset(Transforms())
-    # optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    # trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)
-    # trainer.train()
     run()

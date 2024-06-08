@@ -1,218 +1,104 @@
-import cv2
-import torch
-import logging
-import numpy as np
-from PIL import Image
-import torchvision.transforms.functional as TF
+from src.eye_tracker.landmark_predictor import Predictor
 
-from landmark_detector.model import Network
+import cv2 as cv
+import numpy as np
+import sys
 
 
 class Tracker:
     def __init__(
         self,
-        prev_frame,
-        path: str = "models/resnet152_eye_only.pth",
-        model=Network(model_name="resnet152"),
-    ):
-        self.path = path
-        self.prev_frame = prev_frame
-        self.prev_gray = cv2.cvtColor(self.prev_frame, cv2.COLOR_BGR2GRAY)
-
-        self.color = np.random.randint(0, 255, (100, 3))
-        self.feature_params = dict(
-            maxCorners=50, qualityLevel=0.3, minDistance=7, blockSize=7
-        )
-        self.lk_params = dict(
+        feature_params=dict(maxCorners=50, qualityLevel=0.3, minDistance=7, blockSize=7),
+        lk_params=dict(
             winSize=(244, 244),
             maxLevel=2,
-            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
-        )
+            criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03),
+        ),
+    ):
+        self.color = np.random.randint(0, 255, (100, 3))
+        self.predictor = Predictor()
+        self.feature_params = feature_params
+        self.lk_params = lk_params
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model = self._load_model(model, path)
-        self.model.eval()
-
-    def get_faces(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    @staticmethod
+    def get_faces(gray):
+        face_cascade = cv.CascadeClassifier(
+            cv.data.haarcascades + "haarcascade_frontalface_default.xml"
         )
         return face_cascade.detectMultiScale(gray, 1.1, 4)
 
-    def _load_model(self, model, path):
-        try:
-            model.load_state_dict(torch.load(path, map_location=self.device))
-            logging.info("Model loaded successfully")
-        except Exception as e:
-            logging.error(e)
-        finally:
-            return model
+    def detect_landmarks(
+        self,
+        gray,
+        face,
+    ):
+        if face is not None:
+            shape = self.predictor.predict(gray, face)
+            left_eye_pts, right_eye_pts = self.get_eye_points(shape[0])
 
-    def _preprocess(self, x, y, w, h, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        image = gray[y : y + h, x : x + w]
-        image = TF.resize(Image.fromarray(image), size=(224, 224))
-        image = TF.to_tensor(image)
-        image = TF.normalize(image, [0.5], [0.5])
-        return image.unsqueeze(0)
+            eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
+            print("eye points: ", eye_pts)
+            return eye_pts.reshape(-1, 1, 2)
 
-    def get_landmarks(self, x, y, w, h, frame):
-        all_landmarks = []
-        with torch.no_grad():
-            landmarks = self.model(self._preprocess(x, y, w, h, frame))
-        landmarks = (landmarks.view(68, 2).cpu().detach().numpy() + 0.5) * np.array(
-            [[w, h]]
-        ) + np.array([[x, y]])
-        all_landmarks.append(landmarks)
-        return all_landmarks
+        else:
+            return np.empty((0, 1, 2))
 
-    def get_eye_boxes(self, frame, landmarks) -> dict:
-        left_eye = [
-            landmarks[36],
-            landmarks[37],
-            landmarks[38],
-            landmarks[39],
-            landmarks[40],
-            landmarks[41],
-        ]
-        right_eye = [
-            landmarks[42],
-            landmarks[43],
-            landmarks[44],
-            landmarks[45],
-            landmarks[46],
-            landmarks[47],
-        ]
+    @staticmethod
+    def get_eye_points(shape):
+        print(shape)
 
-        left_eye_x = [point[0] for point in left_eye]
-        left_eye_y = [point[1] for point in left_eye]
+        left_eye_pts = np.array([shape[i] for i in range(36, 42)])
 
-        right_eye_x = [point[0] for point in right_eye]
-        right_eye_y = [point[1] for point in right_eye]
+        right_eye_pts = np.array([shape[i] for i in range(42, 48)])
 
-        return {
-            "left_eye": {
-                "top_left": (int(min(left_eye_x)), int(min(left_eye_y))),
-                "bottom_right": (int(max(left_eye_x)), int(max(left_eye_y))),
-            },
-            "right_eye": {
-                "top_left": (int(min(right_eye_x)), int(min(right_eye_y))),
-                "bottom_right": (int(max(right_eye_x)), int(max(right_eye_y))),
-            },
-        }
+        return left_eye_pts, right_eye_pts
 
-    def get_all_boxes(self, frame):
-        faces = self.get_faces()
-        all_boxes = []
-        for x, y, w, h in faces:
-            all_landmarks = self.get_landmarks(x, y, w, h, frame)
-            for landmarks in all_landmarks:
-                eye_boxes = self.get_eye_boxes(frame, landmarks)
-                all_boxes.append(eye_boxes)
+    @staticmethod
+    def get_eye_boxes(landmarks, gray) -> dict:
+        left_eye_points, right_eye_points = landmarks
+        left_eye_np = np.array(left_eye_points, dtype=np.int32)
+        right_eye_np = np.array(right_eye_points, dtype=np.int32)
 
-    def _get_initial_points(self):
-        faces = self.get_faces(self.prev_frame)
-        all_boxes = []
-        for x, y, w, h in faces:
-            all_landmarks = self.get_landmarks(x, y, w, h, self.prev_frame)
-            for landmarks in all_landmarks:
-                eye_boxes = self.get_eye_boxes(self.prev_frame, landmarks)
-                all_boxes.append(eye_boxes)
-        gray = cv2.cvtColor(self.prev_frame, cv2.COLOR_BGR2GRAY)
-        mask = np.zeros_like(gray)
-        ini_points = []
-        for box in all_boxes:
-            mask_box = np.zeros_like(gray)
-            mask_box[
-                box["left_eye"]["top_left"][1] : box["left_eye"]["bottom_right"][1],
-                box["left_eye"]["top_left"][0] : box["left_eye"]["bottom_right"][0],
-            ] = 255
-            mask = cv2.bitwise_or(mask, mask_box)
-            cropped_gray = cv2.bitwise_and(gray, mask)
-            points = cv2.findNonZero(cropped_gray)
-            if points is not None:
-                points = points.reshape(-1, 2)
-                ini_points.extend(points)
-        if len(ini_points) == 0:
-            print("No points to track")
-        return []
+        # Create bounding boxes around the eyes
+        (x, y, w, h) = cv.boundingRect(left_eye_np)
+        left_eye_region = gray[y : y + h, x : x + w]
+        (x, y, w, h) = cv.boundingRect(right_eye_np)
+        right_eye_region = gray[y : y + h, x : x + w]
 
-        prevPts = np.array(ini_points, dtype=np.float32)
+        return left_eye_region, right_eye_region
 
-        return prevPts
+    def calculate_LK(
+        self,
+        previos_gray,
+        frame_gray,
+        p0,
+    ):
+        p1, st, err = cv.calcOpticalFlowPyrLK(previos_gray, frame_gray, p0, None, **self.lk_params)
+        if p1 is not None:
+            good_old = p0[st == 1]
+            good_new = p1[st == 1]
 
-    def optical_flow_LK(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        all_points = []
-        initial_points = self._get_initial_points()
-        for p0 in initial_points:
-            p1, st, err = cv2.calcOpticalFlowPyrLK(
-                self.prev_gray, gray, p0, None, **self.lk_params
-            )
-            if p1 is not None:
-                tracked_points = p1[st == 1]
-                prev_points = p0[st == 1]
-                all_points.append({"new": tracked_points, "old": prev_points})
-        return all_points
+            return (good_old, good_new)
+        else:
+            raise ValueError("No optical flow found")
+        pass
 
-    def draw_LK(self, idx, frame):
-        all_points = self.optical_flow_LK(frame)
-        for i, (new, old) in enumerate(
-            zip(all_points[idx]["new"], all_points[idx]["old"])
-        ):
-            a, b = new.ravel()
-            c, d = old.ravel()
-            mask = cv2.line(
-                self.mask,
-                (int(a), int(b)),
-                (int(c), int(d)),
+    def draw(self, frame, points, mask) -> None:
+        new, old = points
+
+        for i, (new, old) in enumerate(zip(new, old)):
+            x_new, y_new = new.ravel()  # flatten the array to a 1-dimensional array
+
+            x_old, y_old = old.ravel()
+
+            mask = cv.line(
+                mask,
+                (int(x_new), int(y_new)),
+                (int(x_old), int(y_old)),
                 self.color[i].tolist(),
                 2,
             )
-            cv2.circle(frame, (int(a), int(b)), 5, self.color[i].tolist(), -1)
-            return cv2.add(frame, mask)
 
-    def get_position(self):
-        raise NotImplementedError
+            cv.circle(frame, (int(x_new), int(y_new)), 5, self.color[i].tolist(), -1)
 
-    def draw(self, frame):
-        faces = self.get_faces(frame)
-        all_points = self.optical_flow_LK(frame)
-        print(all_points)
-        for x, y, w, h in faces:
-            all_landmarks = self.get_landmarks(x, y, w, h, frame)
-            for idx, landmarks in enumerate(all_landmarks):
-                eye_boxes = self.get_eye_boxes(frame, landmarks)
-                for i, (new, old) in enumerate(
-                    zip(all_points[idx]["new"], all_points[idx]["old"])
-                ):
-                    a, b = new.ravel()
-                    c, d = old.ravel()
-                    mask = cv2.line(
-                        self.mask,
-                        (int(a), int(b)),
-                        (int(c), int(d)),
-                        self.color[i].tolist(),
-                        2,
-                    )
-                    cv2.circle(frame, (int(a), int(b)), 5, self.color[i].tolist(), -1)
-                    cv2.add(frame, mask)
-                cv2.rectangle(
-                    frame,
-                    eye_boxes["left_eye"]["top_left"],
-                    eye_boxes["left_eye"]["bottom_right"],
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.rectangle(
-                    frame,
-                    eye_boxes["right_eye"]["top_left"],
-                    eye_boxes["right_eye"]["bottom_right"],
-                    (0, 255, 0),
-                    2,
-                )
-                for x, y in landmarks:
-                    cv2.circle(frame, (int(x), int(y)), 1, (0, 255, 0), 1)
-        return frame
-        pass
+            return cv.add(frame, mask)

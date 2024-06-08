@@ -21,51 +21,31 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 def get_eye_points(shape):
     # Eye landmark points according to dlib's 68-point model
     left_eye_pts = np.array([[shape.part(i).x, shape.part(i).y] for i in range(36, 42)])
-    right_eye_pts = np.array(
-        [[shape.part(i).x, shape.part(i).y] for i in range(42, 48)]
-    )
+    right_eye_pts = np.array([[shape.part(i).x, shape.part(i).y] for i in range(42, 48)])
     return left_eye_pts, right_eye_pts
 
 
 def get_eye_boxes(landmarks) -> dict:
-    left_eye = [
-        landmarks[36],
-        landmarks[37],
-        landmarks[38],
-        landmarks[39],
-        landmarks[40],
-        landmarks[41],
-    ]
-    right_eye = [
-        landmarks[42],
-        landmarks[43],
-        landmarks[44],
-        landmarks[45],
-        landmarks[46],
-        landmarks[47],
-    ]
+    left_eye_pts, right_eye_pts = landmarks
 
-    left_eye_x = [point[0] for point in left_eye]
-    left_eye_y = [point[1] for point in left_eye]
-
-    right_eye_x = [point[0] for point in right_eye]
-    right_eye_y = [point[1] for point in right_eye]
-
-    return {
-        "left_eye": {
-            "top_left": (int(min(left_eye_x)), int(min(left_eye_y))),
-            "bottom_right": (int(max(left_eye_x)), int(max(left_eye_y))),
-        },
-        "right_eye": {
-            "top_left": (int(min(right_eye_x)), int(min(right_eye_y))),
-            "bottom_right": (int(max(right_eye_x)), int(max(right_eye_y))),
-        },
-    }
+    return dict(
+        left=dict(
+            top_left=(int(min(left_eye_pts[:, 0])), int(min(left_eye_pts[:, 1]))),
+            bottom_right=(
+                int(max(left_eye_pts[:, 0])),
+                int(max(left_eye_pts[:, 1])),
+            ),
+        ),
+        right=dict(
+            top_left=(int(min(right_eye_pts[:, 0])), int(min(right_eye_pts[:, 1]))),
+            bottom_right=(int(max(right_eye_pts[:, 0])), int(max(right_eye_pts))),
+        ),
+    )
 
 
 cap = cv.VideoCapture(0)
-cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
-cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+# cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+# cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
 # params for ShiTomasi corner detection
 feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
 
@@ -88,9 +68,57 @@ faces = detector(old_gray)
 if len(faces) > 0:
     # Assume only the first detected face is of interest
     shape = predictor(old_gray, faces[0])
+    print("shape: ", shape.parts())
     left_eye_pts, right_eye_pts = get_eye_points(shape)
+
+    left_eye_np = np.array(left_eye_pts, dtype=np.int32)
+    right_eye_np = np.array(right_eye_pts, dtype=np.int32)
+    # Create bounding boxes around the eyes
+    (x, y, w, h) = cv.boundingRect(left_eye_np)
+    left_eye_region = old_gray[y : y + h, x : x + w]
+    (x, y, w, h) = cv.boundingRect(right_eye_np)
+    right_eye_region = old_gray[y : y + h, x : x + w]
+    blurred_left_eye = cv.GaussianBlur(left_eye_region, (5, 5), 0)
+    edges_left_eye = cv.Canny(blurred_left_eye, 50, 150)
+    contours, _ = cv.findContours(edges_left_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    if contours:
+        largest_contour = max(contours, key=cv.contourArea)
+        if len(largest_contour) >= 5:
+            ellipse = cv.fitEllipse(largest_contour)
+            ellipse_center = (
+                int(ellipse[0][0] + x),
+                int(ellipse[0][1] + y),
+            )  # Adjust position
+
+    # Apply pupil tracking (ellipse fitting) within the right eye region
+    blurred_right_eye = cv.GaussianBlur(right_eye_region, (5, 5), 0)
+    edges_right_eye = cv.Canny(blurred_right_eye, 50, 150)
+    contours, _ = cv.findContours(edges_right_eye, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    if contours:
+        if len(largest_contour) >= 5:
+            ellipse_center = (
+                int(ellipse[0][0] + x),
+                int(ellipse[0][1] + y),
+            )  # Adjust position
+
+    largest_contour = max(contours, key=cv.contourArea)
+    ellipse = cv.fitEllipse(largest_contour)
+    print("left eye points befour: ", left_eye_pts)
+    print("right eye points befour: ", right_eye_pts)
+    left_eye_pts = left_eye_pts.append([ellipse[0][0] + x, ellipse[0][1] + y])
+    right_eye_pts = right_eye_pts.append([ellipse[0][0] + x, ellipse[0][1] + y])
+    print("left eye points: ", left_eye_pts)
+    print("right eye points: ", right_eye_pts)
     eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
+    # print("left eye points: ", left_eye_pts)
+    # print("right eye points: ", right_eye_pts)
+    print("eye points: ", eye_pts)
     p0 = eye_pts.reshape(-1, 1, 2)
+    print(
+        "p0\n",
+        p0,
+    )
+    sys.exit()
 else:
     p0 = np.empty((0, 1, 2))
 
@@ -113,9 +141,7 @@ while True:
 
     # calculate optical flow
     if len(p0) > 0:
-        p1, st, err = cv.calcOpticalFlowPyrLK(
-            old_gray, frame_gray, p0, None, **lk_params
-        )
+        p1, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
         if p1 is not None:
             good_new = p1[st == 1]
             good_old = p0[st == 1]
@@ -130,13 +156,9 @@ while True:
                     color[i % len(color)].tolist(),
                     2,
                 )
-                boxes = get_eye_boxes(shape)
-                print(boxes)
 
                 # move_mouse_ct(x=int(WIDTH - (a * 4.0)), y=int((b * 1.6875)))
-                frame = cv.circle(
-                    frame, (int(a), int(b)), 5, color[i % len(color)].tolist(), -1
-                )
+                frame = cv.circle(frame, (int(a), int(b)), 5, color[i % len(color)].tolist(), -1)
 
             # img = cv.add(frame, mask)
 
@@ -151,9 +173,7 @@ while True:
             if len(faces) > 0:
                 shape = predictor(frame_gray, faces[0])
                 left_eye_pts, right_eye_pts = get_eye_points(shape)
-                eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(
-                    np.float32
-                )
+                eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
                 p0 = eye_pts.reshape(-1, 1, 2)
             else:
                 p0 = np.empty((0, 1, 2))
@@ -162,9 +182,7 @@ while True:
         if len(faces) > 0:
             shape = predictor(frame_gray, faces[0])
             left_eye_pts, right_eye_pts = get_eye_points(shape)
-            eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(
-                np.float32
-            )
+            eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
             p0 = eye_pts.reshape(-1, 1, 2)
         else:
             p0 = np.empty((0, 1, 2))

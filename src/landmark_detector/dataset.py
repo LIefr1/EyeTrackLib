@@ -5,10 +5,8 @@ import cv2
 import numpy as np
 
 
-class FaceLandmarksDataset(Dataset):
-    def __init__(
-        self, transform=None, path="datasets\ibug\eyes_only.xml", root_dir="ibug"
-    ):
+class Dataset(Dataset):
+    def __init__(self, transform=None, path="datasets\ibug\eyes_only.xml", root_dir="ibug"):
         tree = ET.parse(path)
         root = tree.getroot()
 
@@ -19,9 +17,7 @@ class FaceLandmarksDataset(Dataset):
         self.root_dir = root_dir
 
         for filename in root[2]:
-            self.image_filenames.append(
-                os.path.join(self.root_dir, filename.attrib["file"])
-            )
+            self.image_filenames.append(os.path.join(self.root_dir, filename.attrib["file"]))
 
             self.crops.append(filename[0].attrib)
 

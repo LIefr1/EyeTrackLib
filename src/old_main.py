@@ -3,13 +3,19 @@ import numpy as np
 import torch
 import time
 import torchvision.transforms.functional as TF
-from landmark_detector.model import Network
+from landmark_detector.model import LandmarkModel
 from PIL import Image
 import sys
-from landmark_detector.train import Trainer
-from landmark_detector.Landmark_dataset import FaceLandmarksDataset
+from landmark_detector.dataset import Dataset
 from landmark_detector.transforms import Transforms
 import torch.optim as optim
+import ctypes as ct
+
+
+def move_mouse_ct(x: int, y: int):
+    print("moving mouse to: ", x, y)
+    ct.windll.user32.SetCursorPos(x, y)
+    # click_if_stable_params(x=x, y=y)
 
 
 def run():
@@ -18,13 +24,13 @@ def run():
     )
 
     cap = cv2.VideoCapture(0)
-    cap.set(propId=cv2.CAP_PROP_FRAME_WIDTH, value=1920)
-    cap.set(propId=cv2.CAP_PROP_FRAME_HEIGHT, value=1080)
+    # cap.set(propId=cv2.CAP_PROP_FRAME_WIDTH, value=1920)
+    # cap.set(propId=cv2.CAP_PROP_FRAME_HEIGHT, value=1080)
 
     # best_network = Network(model_name="resnet50")
     # best_network.load_state_dict(torch.load("models/face_landmarks_resnet50.pth"))
-    best_network = Network(model_name="resnet152")
-    best_network.load_state_dict(torch.load("models/resnet152_eye_only_two.pth"))
+    best_network = LandmarkModel(model_name="resnet152")
+    best_network.load_state_dict(torch.load("models/resnet152_eye_only.pth"))
 
     best_network.eval()
 
@@ -86,21 +92,21 @@ def run():
                 right_eye_max_x = int(max(right_eye_x))
                 right_eye_min_y = int(min(right_eye_y))
                 right_eye_max_y = int(max(right_eye_y))
-
-                cv2.rectangle(
-                    frame,
-                    (left_eye_min_x, left_eye_min_y),
-                    (left_eye_max_x, left_eye_max_y),
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.rectangle(
-                    frame,
-                    (right_eye_min_x, right_eye_min_y),
-                    (right_eye_max_x, right_eye_max_y),
-                    (0, 255, 0),
-                    2,
-                )
+                # move_mouse_ct(int(landmarks[36][0]), int(landmarks[36][0]))
+                # cv2.rectangle(
+                #     frame,
+                #     (left_eye_min_x, left_eye_min_y),
+                #     (left_eye_max_x, left_eye_max_y),
+                #     (0, 255, 0),
+                #     2,
+                # )
+                # cv2.rectangle(
+                #     frame,
+                #     (right_eye_min_x, right_eye_min_y),
+                #     (right_eye_max_x, right_eye_max_y),
+                #     (0, 255, 0),
+                #     2,
+                # )
                 for x, y in landmarks:
                     cv2.circle(frame, (int(x), int(y)), 2, (0, 255, 0), -1)
         # x = all_landmarks[0][36][0]
@@ -119,7 +125,7 @@ if __name__ == "__main__":
     # model = Network(
     #     model_name="resnet18",
     # )
-    # dataset = FaceLandmarksDataset(Transforms())
+    #  Dataset(Transforms())
     # optimizer = optim.Adam(model.parameters(), lr=0.0001)
     # trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)
     # trainer.train()
