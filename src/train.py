@@ -19,9 +19,7 @@ if not ret:
 prvs = cv.cvtColor(frame1, cv.COLOR_BGR2GRAY)
 
 # Load the Haar cascade for face detection
-face_cascade = cv.CascadeClassifier(
-    cv.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
+face_cascade = cv.CascadeClassifier(cv.data.haarcascades + "haarcascade_frontalface_default.xml")
 
 # Detect faces in the first frame
 rects = face_cascade.detectMultiScale(prvs, scaleFactor=1.1, minNeighbors=4)
@@ -62,9 +60,7 @@ while True:
     hsv_masked[..., 0] = ang * 180 / np.pi / 2  # Hue (converted to degrees)
     print("max mag", np.max(mag))
     if np.max(mag) > 15.0:
-        hsv_masked[..., 2] = cv.normalize(
-            mag, None, 0, 255, cv.NORM_MINMAX
-        )  # Vaelue (magnitude)
+        hsv_masked[..., 2] = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)  # Vaelue (magnitude)
 
     # Convert HSV image to BGR format for display
     bgr_masked = cv.cvtColor(hsv_masked, cv.COLOR_HSV2BGR)
@@ -117,29 +113,3 @@ while True:
 # Release the capture and destroy all windows
 cap.release()
 cv.destroyAllWindows()
-
-
-# from landmark_detector.model import Network
-# from landmark_detector.Landmark_dataset import FaceLandmarksDataset
-# from landmark_detector.transforms import Transforms
-# from landmark_detector.trainer import Trainer
-# import torch.optim as optim
-# import torch
-# import logging
-# import sys
-# import time
-# import numpy as np
-# import torch.nn as nn
-# from tqdm import trange
-
-
-# if __name__ == "__main__":
-#     import torch.optim as optim
-
-#     model = Network(
-#         model_name="resnet18",
-#     )
-#     dataset = FaceLandmarksDataset(Transforms())
-#     optimizer = optim.Adam(model.parameters(), lr=0.0001)
-#     trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)
-#     trainer.train()

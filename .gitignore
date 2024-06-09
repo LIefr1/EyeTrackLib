@@ -1,6 +1,7 @@
 
 *.pyc
 datasets/
+ibug/
 models/
 *__pychache__*
 .vscode/

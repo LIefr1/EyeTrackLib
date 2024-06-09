@@ -1,8 +1,7 @@
-from src.eye_tracker.landmark_predictor import Predictor
-
 import cv2 as cv
 import numpy as np
 import sys
+from src.eye_tracker.landmark_predictor import Predictor
 
 
 class Tracker:
@@ -27,19 +26,16 @@ class Tracker:
         )
         return face_cascade.detectMultiScale(gray, 1.1, 4)
 
-    def detect_landmarks(
-        self,
-        gray,
-        face,
-    ):
+    def detect_landmarks(self, gray, face):
         if face is not None:
             shape = self.predictor.predict(gray, face)
-            left_eye_pts, right_eye_pts = self.get_eye_points(shape[0])
+            print(shape)
+            sys.exit()
+            left_eye_pts, right_eye_pts = self.get_eye_points(shape)
 
             eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
             print("eye points: ", eye_pts)
             return eye_pts.reshape(-1, 1, 2)
-
         else:
             return np.empty((0, 1, 2))
 
@@ -48,13 +44,12 @@ class Tracker:
         print(shape)
 
         left_eye_pts = np.array([shape[i] for i in range(36, 42)])
-
         right_eye_pts = np.array([shape[i] for i in range(42, 48)])
 
         return left_eye_pts, right_eye_pts
 
     @staticmethod
-    def get_eye_boxes(landmarks, gray) -> dict:
+    def get_eye_boxes(landmarks, gray):
         left_eye_points, right_eye_points = landmarks
         left_eye_np = np.array(left_eye_points, dtype=np.int32)
         right_eye_np = np.array(right_eye_points, dtype=np.int32)
@@ -67,28 +62,26 @@ class Tracker:
 
         return left_eye_region, right_eye_region
 
-    def calculate_LK(
-        self,
-        previos_gray,
-        frame_gray,
-        p0,
-    ):
-        p1, st, err = cv.calcOpticalFlowPyrLK(previos_gray, frame_gray, p0, None, **self.lk_params)
+    def calculate_LK(self, previous_gray, frame_gray, p0):
+        p1, st, err = cv.calcOpticalFlowPyrLK(previous_gray, frame_gray, p0, None, **self.lk_params)
+        # print("p1: ", p1)
         if p1 is not None:
             good_old = p0[st == 1]
             good_new = p1[st == 1]
 
-            return (good_old, good_new)
+            print("good old, good new: ", good_old, good_new)
+            return good_old, good_new
         else:
             raise ValueError("No optical flow found")
-        pass
 
-    def draw(self, frame, points, mask) -> None:
+    def draw(self, frame, points, mask):
         new, old = points
+        # print("i am here")
+        # print("new, old: ", new, old)
 
         for i, (new, old) in enumerate(zip(new, old)):
             x_new, y_new = new.ravel()  # flatten the array to a 1-dimensional array
-
+            # print("x_new, y_new", x_new, y_new)
             x_old, y_old = old.ravel()
 
             mask = cv.line(
@@ -98,7 +91,7 @@ class Tracker:
                 self.color[i].tolist(),
                 2,
             )
-
-            cv.circle(frame, (int(x_new), int(y_new)), 5, self.color[i].tolist(), -1)
-
-            return cv.add(frame, mask)
+            cv.circle(frame, (int(x_new), int(y_new)), 3, self.color[i].tolist(), -1)
+            img = cv.add(frame, mask)
+            # print("img: ", img)
+            return img

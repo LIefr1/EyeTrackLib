@@ -29,8 +29,8 @@ def run():
 
     # best_network = Network(model_name="resnet50")
     # best_network.load_state_dict(torch.load("models/face_landmarks_resnet50.pth"))
-    best_network = LandmarkModel(model_name="resnet152")
-    best_network.load_state_dict(torch.load("models/resnet152_eye_only.pth"))
+    best_network = LandmarkModel(model_name="resnet18", num_classes=40)
+    best_network.load_state_dict(torch.load("models/resnet18.pth"))
 
     best_network.eval()
 
@@ -47,51 +47,52 @@ def run():
 
             with torch.no_grad():
                 landmarks = best_network(image.unsqueeze(0))
+                print(landmarks)
 
-            landmarks = (landmarks.view(68, 2).cpu().detach().numpy() + 0.5) * np.array(
+            landmarks = (landmarks.view(20, 2).cpu().detach().numpy() + 0.5) * np.array(
                 [[w, h]]
             ) + np.array([[x, y]])
             all_landmarks.append(landmarks)
             # sys.exit()
             # sys.exit()
             for landmarks in all_landmarks:
-                left_eye = [
-                    landmarks[36],
-                    landmarks[37],
-                    landmarks[38],
-                    landmarks[39],
-                    landmarks[40],
-                    landmarks[41],
-                ]
-                right_eye = [
-                    landmarks[42],
-                    landmarks[43],
-                    landmarks[44],
-                    landmarks[45],
-                    landmarks[46],
-                    landmarks[47],
-                ]
+                # left_eye = [
+                #     landmarks[36],
+                #     landmarks[37],
+                #     landmarks[38],
+                #     landmarks[39],
+                #     landmarks[40],
+                #     landmarks[41],
+                # ]
+                # right_eye = [
+                #     landmarks[42],
+                #     landmarks[43],
+                #     landmarks[44],
+                #     landmarks[45],
+                #     landmarks[46],
+                #     landmarks[47],
+                # ]
 
-                left_eye_x = [point[0] for point in left_eye]
-                left_eye_y = [point[1] for point in left_eye]
+                # left_eye_x = [point[0] for point in left_eye]
+                # left_eye_y = [point[1] for point in left_eye]
 
-                right_eye_x = [point[0] for point in right_eye]
-                right_eye_y = [point[1] for point in right_eye]
+                # right_eye_x = [point[0] for point in right_eye]
+                # right_eye_y = [point[1] for point in right_eye]
 
-                # Combine for easier calculation (optional)
-                all_eye_x = left_eye_x + right_eye_x
-                all_eye_y = left_eye_y + right_eye_y
+                # # Combine for easier calculation (optional)
+                # all_eye_x = left_eye_x + right_eye_x
+                # all_eye_y = left_eye_y + right_eye_y
 
-                # Find bounding box coordinates
-                left_eye_min_x = int(min(left_eye_x))
-                left_eye_max_x = int(max(left_eye_x))
-                left_eye_min_y = int(min(left_eye_y))
-                left_eye_max_y = int(max(left_eye_y))
+                # # Find bounding box coordinates
+                # left_eye_min_x = int(min(left_eye_x))
+                # left_eye_max_x = int(max(left_eye_x))
+                # left_eye_min_y = int(min(left_eye_y))
+                # left_eye_max_y = int(max(left_eye_y))
 
-                right_eye_min_x = int(min(right_eye_x))
-                right_eye_max_x = int(max(right_eye_x))
-                right_eye_min_y = int(min(right_eye_y))
-                right_eye_max_y = int(max(right_eye_y))
+                # right_eye_min_x = int(min(right_eye_x))
+                # right_eye_max_x = int(max(right_eye_x))
+                # right_eye_min_y = int(min(right_eye_y))
+                # right_eye_max_y = int(max(right_eye_y))
                 # move_mouse_ct(int(landmarks[36][0]), int(landmarks[36][0]))
                 # cv2.rectangle(
                 #     frame,

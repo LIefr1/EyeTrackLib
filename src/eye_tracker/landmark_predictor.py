@@ -8,44 +8,34 @@ from torchvision.transforms.functional import resize, to_tensor, normalize
 
 
 class Predictor:
-    def __init__(
-        self,
-        model=LandmarkModel(model_name="resnet152"),
-        path=None,
-    ):
+    def __init__(self, model=LandmarkModel(model_name="resnet152"), path="models/resnet152.pth"):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model if path is None else self._load_model(model, path)
+        self.model = self.model.to(self.device)
 
     def _load_model(self, model, path):
         try:
             model.load_state_dict(torch.load(path, map_location=self.device))
             logging.info("Model loaded successfully")
         except Exception as e:
+            logging.error(f"Failed to load model: {e}")
             raise Exception("Failed to load model")
-            print(e)
-        finally:
-            return model
+        return model
 
     def _preprocess(self, x, y, w, h, gray):
         image = gray[y : y + h, x : x + w]
         image = resize(Image.fromarray(image), size=(224, 224))
         image = to_tensor(image)
         image = normalize(image, [0.5], [0.5])
-        return image.unsqueeze(0)
+        return image.unsqueeze(0).to(self.device)
 
-    def predict(
-        self,
-        gray,
-        face,
-    ):
-        # print(face)
+    def predict(self, gray, face):
         x, y, w, h = face
         self.model.eval()
-        all_landmarks = []
         with torch.no_grad():
-            landmarks = self.model(self._preprocess(x, y, w, h, gray))
+            input_tensor = self._preprocess(x, y, w, h, gray)
+            landmarks = self.model(input_tensor)
         landmarks = (landmarks.view(68, 2).cpu().detach().numpy() + 0.5) * np.array(
             [[w, h]]
         ) + np.array([[x, y]])
-        all_landmarks.append(landmarks)
-        return all_landmarks
+        return landmarks
