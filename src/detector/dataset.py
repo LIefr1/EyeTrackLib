@@ -7,19 +7,22 @@ from torch.utils.data import Dataset
 
 class Dataset(Dataset):
     def __init__(
-        self, transform=None, path=r"ibug\eyes_only.xml", root_dir=r"B:\EyeTrackLib\ibug\afw"
+        self,
+        xml_path,
+        dataset_dir,
+        transform=None,
     ):
-        tree = ET.parse(path)
+        tree = ET.parse(xml_path)
         root = tree.getroot()
 
         self.image_filenames = []
         self.landmarks = []
         self.crops = []
         self.transform = transform
-        self.root_dir = root_dir
+        self.dataset_dir = dataset_dir
 
         for filename in root[2]:
-            image_path = os.path.join(self.root_dir, filename.attrib["file"]).replace("\\", "/")
+            image_path = os.path.join(self.dataset_dir, filename.attrib["file"]).replace("\\", "/")
             if os.path.exists(image_path):
                 self.image_filenames.append(image_path)
                 self.crops.append(filename[0].attrib)

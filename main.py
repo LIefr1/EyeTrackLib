@@ -13,8 +13,8 @@ import sys
 
 def main():
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 960)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
     tracker = Tracker(
         model=LandmarkModel(model_name="resnet152", num_classes=40),

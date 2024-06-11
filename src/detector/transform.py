@@ -35,9 +35,7 @@ class Transforms:
         return image, landmarks
 
     def _color_jitter(self, image, landmarks):
-        color_jitter = transforms.ColorJitter(
-            brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1
-        )
+        color_jitter = transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1)
         image = color_jitter(image)
         return image, landmarks
 

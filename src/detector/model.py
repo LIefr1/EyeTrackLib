@@ -14,14 +14,12 @@ class LandmarkModel(nn.Module):
     ):
         super().__init__()
         self.model_name = model_name
-        self.model = self.set_model()
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False
-        )
+        self.model = self._set_model()
+        self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    def set_model(self):
+    def _set_model(self):
         models = {
             "resnet18": resnet18(),
             "resnet34": resnet34(),

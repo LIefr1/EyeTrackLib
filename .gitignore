@@ -1,15 +1,97 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 
-*.pyc
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+__pypackages__/
+
+# Installer logs / other logs
+pip-log.txt
+pip-delete-this-directory.txt
+log/ 
+*.log
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Other Editors
+*~
+*.swp
+*.swo
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+*.backup
+
+# Archive files
+*.tar
+*.gz
+*.bz2
+*.xz
+*.zip
+*.7z
+
+# Other
+*.filepart
+*.dat
+
+# Ignored directories
 datasets/
 ibug/
 models/
-*__pychache__*
-.vscode/
-*.tar
-*.gz
-*.filepart
-*.log
-*.bz2
-*.dat
-src/random(temp)/
-*.7z
+random_stuff/
