@@ -12,3 +12,4 @@ models/
 *.bz2
 *.dat
 src/random(temp)/
+*.7z

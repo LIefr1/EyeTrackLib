@@ -13,10 +13,13 @@ import sys
 
 def main():
     cap = cv.VideoCapture(0)
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
 
-    tracker = Tracker()
+    tracker = Tracker(
+        model=LandmarkModel(model_name="resnet152", num_classes=40),
+        path=r"models/resnet152-105-2024-06-10_08-21-07.pth",
+    )
     ret, previous_frame = cap.read()
     if not ret:
         print("Error: Unable to read from camera")
@@ -68,5 +71,5 @@ def train():
 
 
 if __name__ == "__main__":
-    # main()
-    train()
+    main()
+    # train()

@@ -5,12 +5,13 @@ import logging
 from PIL import Image
 from ..landmark_detector.model import LandmarkModel
 from torchvision.transforms.functional import resize, to_tensor, normalize
+import time
 
 
 class Predictor:
-    def __init__(self, model=LandmarkModel(model_name="resnet152"), path="models/resnet152.pth"):
+    def __init__(self, model, path):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model = model if path is None else self._load_model(model, path)
+        self.model = self._load_model(model, path)
         self.model = self.model.to(self.device)
 
     def _load_model(self, model, path):
@@ -35,7 +36,8 @@ class Predictor:
         with torch.no_grad():
             input_tensor = self._preprocess(x, y, w, h, gray)
             landmarks = self.model(input_tensor)
-        landmarks = (landmarks.view(68, 2).cpu().detach().numpy() + 0.5) * np.array(
-            [[w, h]]
-        ) + np.array([[x, y]])
+            shape = landmarks.shape[1] // 2
+            landmarks = (landmarks.view(shape, 2).cpu().detach().numpy() + 0.5) * np.array(
+                [[w, h]]
+            ) + np.array([[x, y]])
         return landmarks

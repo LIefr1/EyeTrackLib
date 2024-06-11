@@ -29,8 +29,8 @@ def run():
 
     # best_network = Network(model_name="resnet50")
     # best_network.load_state_dict(torch.load("models/face_landmarks_resnet50.pth"))
-    best_network = LandmarkModel(model_name="resnet18", num_classes=40)
-    best_network.load_state_dict(torch.load("models/resnet18.pth"))
+    best_network = LandmarkModel(model_name="resnet152", num_classes=40)
+    best_network.load_state_dict(torch.load(r"models\resnet152-105-2024-06-10_08-21-07.pth"))
 
     best_network.eval()
 
@@ -47,7 +47,7 @@ def run():
 
             with torch.no_grad():
                 landmarks = best_network(image.unsqueeze(0))
-                print(landmarks)
+                # print(landmarks)
 
             landmarks = (landmarks.view(20, 2).cpu().detach().numpy() + 0.5) * np.array(
                 [[w, h]]
