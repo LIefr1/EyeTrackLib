@@ -1,8 +1,7 @@
+import sys
 import cv2 as cv
 import numpy as np
-import sys
-from src.eye_tracker.landmark_predictor import Predictor
-from src.landmark_detector.model import LandmarkModel
+from .landmark_predictor import Predictor
 
 
 class Tracker:
@@ -82,12 +81,14 @@ class Tracker:
 
     def draw(self, frame, points, mask):
         new, old = points
+        print("new, old: \n", new, old)
+        # sys.exit()
         # print("i am here")
         # print("new, old: \n", new, old)
 
         for i, (new, old) in enumerate(zip(new, old)):
             x_new, y_new = new.ravel()  # flatten the array to a 1-dimensional array
-            print("x_new, y_new", x_new, y_new)
+            # print("x_new, y_new", x_new, y_new)
             x_old, y_old = old.ravel()
 
             mask = cv.line(

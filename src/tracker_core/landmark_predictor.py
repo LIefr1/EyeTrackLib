@@ -1,11 +1,8 @@
-import cv2 as cv
 import numpy as np
 import torch
 import logging
 from PIL import Image
-from ..landmark_detector.model import LandmarkModel
 from torchvision.transforms.functional import resize, to_tensor, normalize
-import time
 
 
 class Predictor:

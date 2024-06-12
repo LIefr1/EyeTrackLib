@@ -1,10 +1,9 @@
-from src.landmark_detector.model import LandmarkModel
-from src.landmark_detector.trainer import Trainer
-from src.landmark_detector.dataset import Dataset
-from src.landmark_detector.transforms import Transforms
-from src.eye_tracker.tracker import Tracker
-
-
+from src.detector.model import LandmarkModel
+from src.utils.trainer import Trainer
+from src.detector.dataset import Dataset
+from src.detector.transform import Transforms
+from src.tracker_core.tracker import Tracker
+from src.mouse_controller.controller import MouseController
 import torch.optim as optim
 import cv2 as cv
 import numpy as np
@@ -13,12 +12,13 @@ import sys
 
 def main():
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 960)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
+    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
 
+    mouse = MouseController(speed=2.0)
     tracker = Tracker(
         model=LandmarkModel(model_name="resnet152", num_classes=40),
-        path=r"models/resnet152-105-2024-06-10_08-21-07.pth",
+        path=r"models/resnet152-155-2024-06-10_08-21-07.pth",
     )
     ret, previous_frame = cap.read()
     if not ret:
@@ -48,6 +48,9 @@ def main():
                         frame_gray,
                         p0,
                     )
+                    x, y = np.average(old, axis=0)
+                    mouse.move_mouse(int(x), int(y))
+
                     img = tracker.draw(frame, (new, old), mask)
                     previous_gray = frame_gray.copy()
                     p0 = new.reshape(-1, 1, 2)
