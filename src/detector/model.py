@@ -16,7 +16,6 @@ class LandmarkModel(nn.Module):
         self.model_name = model_name
         self.model = self._set_model()
         self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        print("parameters in model:", sum(p.numel() for p in self.model.parameters()))
         self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

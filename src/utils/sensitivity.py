@@ -1,5 +1,6 @@
 import screeninfo
 import numpy as np
+import sys
 
 
 class Sensitivity:
@@ -29,7 +30,7 @@ class Sensitivity:
         :param data: The raw eye-tracking data.
         :return: Inverted x-axis eye-tracking data.
         """
-        return [[self.WIDTH - x, y] for x, y in data]
+        return [[self.WIDTH - x, self.HEIGHT - y] for x, y in data]
 
     def __set_speed_by_resolution(self):
         """
@@ -53,12 +54,14 @@ class Sensitivity:
         :param invert_x: Boolean flag to invert the x-axis data.
         :return: Adjusted eye-tracking data.
         """
-        if invert_x:
-            eye_data = self.__invert_x(eye_data)
+        # if invert_x:
+        #     eye_data = self.__invert_x(eye_data)
 
         eye_data = np.array(eye_data)
-
+        # pmax = np.max(eye_data, axis=0)
+        pmax = eye_data[8]
+        self.__set_speed_by_resolution()
         # Adjust the data based on speed and precision
-        adjusted_data = eye_data * self.speed * self.precision
+        adjusted_data = pmax * 3
 
         return adjusted_data.tolist()

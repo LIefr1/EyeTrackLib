@@ -1,7 +1,7 @@
 from src.detector.model import LandmarkModel
-from src.utils.trainer import Trainer
-from src.detector.dataset import Dataset
-from src.detector.transform import Transforms
+from src.detector.train.trainer import Trainer
+from src.detector.train.dataset import Dataset
+from src.detector.train.transform import Transforms
 from src.tracker_core.tracker import Tracker
 from src.mouse_controller.controller import MouseController
 import torch.optim as optim
@@ -12,13 +12,20 @@ import sys
 
 def main():
     cap = cv.VideoCapture(0)
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1200)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 800)
+    W = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    H = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
 
-    mouse = MouseController(speed=2.0)
+    mouse = MouseController(frame_w=W, frame_h=H)
     tracker = Tracker(
         model=LandmarkModel(model_name="resnet152", num_classes=40),
         path=r"models/resnet152-155-2024-06-10_08-21-07.pth",
+        lk_params=dict(
+            winSize=(16, 16),
+            maxLevel=4,
+            criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03),
+        ),
     )
     ret, previous_frame = cap.read()
     if not ret:
@@ -38,24 +45,25 @@ def main():
             break
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        faces = tracker.get_faces(frame_gray)
-        if len(faces) > 0:
-            p0 = tracker.detect_landmarks(frame_gray, faces[0])
-            if p0.size > 0:
-                try:
-                    new, old = tracker.calculate_LK(
-                        previous_gray,
-                        frame_gray,
-                        p0,
-                    )
-                    x, y = np.average(old, axis=0)
-                    mouse.move_mouse(int(x), int(y))
+        largest_face = tracker.get_faces(frame_gray, get_largest_face=True)
 
-                    img = tracker.draw(frame, (new, old), mask)
-                    previous_gray = frame_gray.copy()
-                    p0 = new.reshape(-1, 1, 2)
-                except Exception as e:
-                    print(f"Error calculating optical flow: {e}")
+        p0 = tracker.detect_landmarks(frame_gray, largest_face)
+        if p0.size > 0:
+            try:
+                new, old = tracker.calculate_LK(
+                    previous_gray,
+                    frame_gray,
+                    p0,
+                )
+                x, y = np.max(new, axis=0)
+                print("p:", x, y)
+                mouse.move_mouse_new(new)
+            except Exception as e:
+                print(f"Error calculating optical flow: {e}")
+
+            # img = tracker.draw(frame, (new, old), mask)
+            previous_gray = frame_gray.copy()
+            p0 = new.reshape(-1, 1, 2)
 
         cv.imshow("Output", img)
         if cv.waitKey(1) & 0xFF == ord("q"):
@@ -66,7 +74,7 @@ def main():
 
 
 def train():
-    model = LandmarkModel(model_name="resnet18", num_classes=40)
+    model = LandmarkModel(model_name="resnet152", num_classes=40)
     dataset = Dataset(Transforms())
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)

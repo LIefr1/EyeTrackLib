@@ -25,11 +25,17 @@ class Tracker:
         self.lk_params = lk_params
 
     @staticmethod
-    def get_faces(gray):
+    def get_faces(gray, get_largest_face=False):
         face_cascade = cv.CascadeClassifier(
             cv.data.haarcascades + "haarcascade_frontalface_default.xml"
         )
-        return face_cascade.detectMultiScale(gray, 1.1, 4)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+        if len(faces) > 0:
+            largest_face = max(faces, key=lambda rect: rect[2] * rect[3])
+            if get_largest_face:
+                return largest_face
+        return faces
 
     def detect_landmarks(self, gray, face):
         if face is not None:
