@@ -17,8 +17,8 @@ def test_landmark_model():
     # Example: batch of 4 samples, 1 channel, depth of 16, height of 64, width of 64
     batch_size = 4
     channels = 1
-    height = 224
-    width = 224
+    height = 16
+    width = 16
     input_data = torch.randn(batch_size, channels, height, width)
 
     # Move model to the appropriate device
@@ -26,9 +26,10 @@ def test_landmark_model():
 
     # Perform a forward pass
     output = model(input_data)
-
+    
     print("Input shape:", input_data.shape)
-    print("Input:", input_data)
+    print("Input:", input_data[0][0])
+
 
     # Print output shape
     print("Output shape:", output.shape)

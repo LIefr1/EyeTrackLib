@@ -32,6 +32,15 @@ class Sensitivity:
         """
         return [[self.WIDTH - x, self.HEIGHT - y] for x, y in data]
 
+    def __translate_coordinates(x, y, source_width, source_height, target_width, target_height):
+        S_x = target_width / source_width
+        S_y = target_height / source_height
+
+        x_prime = x * S_x
+        y_prime = y * S_y
+
+        return x_prime, y_prime
+
     def __set_speed_by_resolution(self):
         """
         Adjust the speed parameter based on the resolution.
@@ -47,7 +56,15 @@ class Sensitivity:
         self.speed = speed
         self.precision = precision
 
-    def apply(self, eye_data: list, invert_x=False) -> list:
+    def apply(
+        self,
+        source_width: int,
+        source_height: int,
+        target_width: int,
+        target_height: int,
+        eye_data: list,
+        invert_x=False,
+    ) -> list:
         """
         Apply the sensitivity adjustments to the eye-tracking data.
         :param eye_data: The raw eye-tracking data.
@@ -60,8 +77,16 @@ class Sensitivity:
         eye_data = np.array(eye_data)
         # pmax = np.max(eye_data, axis=0)
         pmax = eye_data[8]
+        adjusted_data = self.__translate_coordinates(
+            x=pmax[0],
+            y=pmax[1],
+            source_height=source_height,
+            source_width=source_height,
+            target_height=target_height,
+            target_width=target_width,
+        )
         self.__set_speed_by_resolution()
         # Adjust the data based on speed and precision
         adjusted_data = pmax * 3
 
-        return adjusted_data.tolist()
+        return adjusted_data

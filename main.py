@@ -10,7 +10,7 @@ import numpy as np
 import sys
 
 
-def main():
+def mouse_main():
     cap = cv.VideoCapture(0)
     cap.set(cv.CAP_PROP_FRAME_WIDTH, 1200)
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, 800)
@@ -82,5 +82,5 @@ def train():
 
 
 if __name__ == "__main__":
-    main()
+    mouse_main()
     # train()
