@@ -4,13 +4,7 @@ import sys
 
 
 class Sensitivity:
-    def __init__(
-        self,
-        frame_w,
-        frame_h,
-        speed: float = 1.0,
-        precision: float = 1.0,
-    ):
+    def __init__(self, frame_w, frame_h, speed: float = 1.0, precision: float = 1.0):
         """
         Initialize the Sensitivity class with default parameters.
         :param speed: The speed sensitivity parameter.
@@ -32,7 +26,19 @@ class Sensitivity:
         """
         return [[self.WIDTH - x, self.HEIGHT - y] for x, y in data]
 
-    def __translate_coordinates(x, y, source_width, source_height, target_width, target_height):
+    def __translate_coordinates(
+        self, x, y, source_width, source_height, target_width, target_height
+    ):
+        """
+        Translate coordinates from one resolution to another.
+        :param x: x coordinate.
+        :param y: y coordinate.
+        :param source_width: Width of the source resolution.
+        :param source_height: Height of the source resolution.
+        :param target_width: Width of the target resolution.
+        :param target_height: Height of the target resolution.
+        :return: Translated x and y coordinates.
+        """
         S_x = target_width / source_width
         S_y = target_height / source_height
 
@@ -56,15 +62,7 @@ class Sensitivity:
         self.speed = speed
         self.precision = precision
 
-    def apply(
-        self,
-        source_width: int,
-        source_height: int,
-        target_width: int,
-        target_height: int,
-        eye_data: list,
-        invert_x=False,
-    ) -> list:
+    def apply(self, eye_data: list, invert_x=False) -> list:
         """
         Apply the sensitivity adjustments to the eye-tracking data.
         :param eye_data: The raw eye-tracking data.
@@ -75,18 +73,21 @@ class Sensitivity:
         #     eye_data = self.__invert_x(eye_data)
 
         eye_data = np.array(eye_data)
-        # pmax = np.max(eye_data, axis=0)
         pmax = eye_data[8]
+        print("pmax", pmax)
+
+        # Adjust speed and precision based on region
+
         adjusted_data = self.__translate_coordinates(
             x=pmax[0],
             y=pmax[1],
-            source_height=source_height,
-            source_width=source_height,
-            target_height=target_height,
-            target_width=target_width,
+            source_height=self.FRAME_H,
+            source_width=self.FRAME_W,
+            target_height=self.HEIGHT,
+            target_width=self.WIDTH,
         )
-        self.__set_speed_by_resolution()
-        # Adjust the data based on speed and precision
-        adjusted_data = pmax * 3
+
+        # Adjust the data based on speed
+        adjusted_data = [coord * self.speed for coord in adjusted_data]
 
         return adjusted_data

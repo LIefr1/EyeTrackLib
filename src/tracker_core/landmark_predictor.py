@@ -28,13 +28,19 @@ class Predictor:
         return image.unsqueeze(0).to(self.device)
 
     def predict(self, gray, face):
-        x, y, w, h = face
-        self.model.eval()
-        with torch.no_grad():
-            input_tensor = self._preprocess(x, y, w, h, gray)
-            landmarks = self.model(input_tensor)
-            shape = landmarks.shape[1] // 2
-            landmarks = (landmarks.view(shape, 2).cpu().detach().numpy() + 0.5) * np.array(
-                [[w, h]]
-            ) + np.array([[x, y]])
-        return landmarks
+        try:
+            x, y, w, h = face
+            self.model.eval()
+            with torch.no_grad():
+                input_tensor = self._preprocess(x, y, w, h, gray)
+                landmarks = self.model(input_tensor)
+                shape = landmarks.shape[1] // 2
+                landmarks = (landmarks.view(shape, 2).cpu().detach().numpy() + 0.5) * np.array(
+                    [[w, h]]
+                ) + np.array([[x, y]])
+            print(landmarks)
+            return landmarks
+        except Exception as e:
+            print(e)
+
+        return np.empty((20, 2))

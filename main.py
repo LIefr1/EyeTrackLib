@@ -82,5 +82,13 @@ def train():
 
 
 if __name__ == "__main__":
-    mouse_main()
+    # mouse_main()
     # train()
+    import sys
+    from src.demo.demo import Demo
+    from PyQt6.QtWidgets import QApplication
+
+    App = QApplication(sys.argv)
+    Root = Demo()
+    Root.show()
+    sys.exit(App.exec())
