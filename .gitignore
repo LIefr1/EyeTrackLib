@@ -89,6 +89,7 @@ venv.bak/
 # Other
 *.filepart
 *.dat
+*.pth
 
 # Ignored directories
 datasets/

@@ -14,6 +14,8 @@ def mouse_main():
     cap = cv.VideoCapture(0)
     cap.set(cv.CAP_PROP_FRAME_WIDTH, 1200)
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, 800)
+    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
     W = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
     H = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
 
@@ -57,11 +59,11 @@ def mouse_main():
                 )
                 x, y = np.max(new, axis=0)
                 print("p:", x, y)
-                mouse.move_mouse_new(new)
+                # mouse.move_mouse_new(new)
             except Exception as e:
                 print(f"Error calculating optical flow: {e}")
 
-            # img = tracker.draw(frame, (new, old), mask)
+            img = tracker.draw(frame, (new, old), mask)
             previous_gray = frame_gray.copy()
             p0 = new.reshape(-1, 1, 2)
 
@@ -82,13 +84,13 @@ def train():
 
 
 if __name__ == "__main__":
-    # mouse_main()
+    mouse_main()
     # train()
-    import sys
-    from src.demo.demo import Demo
-    from PyQt6.QtWidgets import QApplication
+    # import sys
+    # from src.demo.demo import Demo
+    # from PyQt6.QtWidgets import QApplication
 
-    App = QApplication(sys.argv)
-    Root = Demo()
-    Root.show()
-    sys.exit(App.exec())
+    # App = QApplication(sys.argv)
+    # Root = Demo()
+    # Root.show()
+    # sys.exit(App.exec())

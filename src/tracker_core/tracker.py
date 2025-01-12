@@ -2,6 +2,7 @@ import sys
 import cv2 as cv
 import numpy as np
 from .landmark_predictor import Predictor
+from ..utils.file_handling import FileHandling
 
 
 class Tracker:
@@ -43,7 +44,8 @@ class Tracker:
             # print(shape)
             # sys.exit()
             left_eye_pts, right_eye_pts = self.get_eye_points(shape)
-
+            print("eye points\n: ", left_eye_pts, right_eye_pts)
+            sys.exit()
             eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
             # print("eye points: ", eye_pts)
             return eye_pts.reshape(-1, 1, 2)
@@ -97,14 +99,23 @@ class Tracker:
             # print("x_new, y_new", x_new, y_new)
             x_old, y_old = old.ravel()
 
-            mask = cv.line(
-                mask,
+            # mask = cv.line(
+            #     mask,
+            #     (int(x_new), int(y_new)),
+            #     (int(x_old), int(y_old)),
+            #     self.color[i].tolist(),
+            #     2,
+            # )
+            # cv.circle(frame, (int(x_new), int(y_new)), 3, self.color[i].tolist(), -1)
+            cv.putText(
+                frame,
+                str(i),
                 (int(x_new), int(y_new)),
-                (int(x_old), int(y_old)),
+                cv.FONT_HERSHEY_SIMPLEX,
+                0.5,
                 self.color[i].tolist(),
                 2,
             )
-            cv.circle(frame, (int(x_new), int(y_new)), 3, self.color[i].tolist(), -1)
         img = cv.add(frame, mask)
         # print("img: ", img)
         return img

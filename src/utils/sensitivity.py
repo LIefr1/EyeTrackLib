@@ -87,7 +87,10 @@ class Sensitivity:
             target_width=self.WIDTH,
         )
 
+        print("ini data:", pmax)
         # Adjust the data based on speed
         adjusted_data = [coord * self.speed for coord in adjusted_data]
+        print("adjusted_data:", adjusted_data)
+        # sys.exit()
 
         return adjusted_data

@@ -86,8 +86,11 @@ class FileHandling:
                     box.remove(part)
         tree.write("datasets/ibug/eyes_only.xml")
 
-    def __calc(x1, y1, x2, y2):
-        return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+    @staticmethod
+    def calculate_centre(x1, y1, x2, y2):
+        distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+        scalar = distance / 2
+        return (x1 + scalar, y1 + scalar)
 
     def add_pupil(self, file_path: str):
         tree = ET.parse(file_path)
@@ -100,9 +103,7 @@ class FileHandling:
                     C = box.findall(".//part[@name='40']")
                     x1, y1 = int(part.get("x")), int(part.get("y"))
                     x2, y2 = int(C[0].get("x")), int(C[0].get("y"))
-                    scalar = self.__calc(x1, y1, x2, y2) / 2
-                    centre = (x1 + scalar, y1 + scalar)
-
+                    centre = self.calculate_centre(x1, y1, x2, y2)
                     new_part = ET.Element(
                         "part", dict(name="68", x=str(int(centre[0])), y=str(int(centre[1])))
                     )
