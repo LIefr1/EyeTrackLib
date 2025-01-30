@@ -44,8 +44,8 @@ class Tracker:
             # print(shape)
             # sys.exit()
             left_eye_pts, right_eye_pts = self.get_eye_points(shape)
-            print("eye points\n: ", left_eye_pts, right_eye_pts)
-            sys.exit()
+            # print("eye points\n: ", left_eye_pts, right_eye_pts)
+            # sys.exit()
             eye_pts = np.concatenate((left_eye_pts, right_eye_pts), axis=0).astype(np.float32)
             # print("eye points: ", eye_pts)
             return eye_pts.reshape(-1, 1, 2)
@@ -89,7 +89,7 @@ class Tracker:
 
     def draw(self, frame, points, mask):
         new, old = points
-        print("new, old: \n", new, old)
+        # print("new, old: \n", new, old)
         # sys.exit()
         # print("i am here")
         # print("new, old: \n", new, old)
