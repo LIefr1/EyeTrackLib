@@ -10,6 +10,13 @@ import numpy as np
 import sys
 
 
+def normalize_coord(x, min_val, max_val):
+    return 2 * ((x - min_val) / (max_val - min_val)) - 1 
+    
+
+def to_screen_coords(x,y, W, H):
+    return (int((x + 1) / 2 * W), int((y + 1) / 2 * H))
+
 def mouse_main():
     cap = cv.VideoCapture(0)
     cap.set(cv.CAP_PROP_FRAME_WIDTH, 1200)
@@ -20,6 +27,7 @@ def mouse_main():
     H = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
 
     mouse = MouseController(frame_w=W, frame_h=H)
+    
     tracker = Tracker(
         model=LandmarkModel(model_name="resnet152", num_classes=40),
         path=r"models/resnet152-155-2024-06-10_08-21-07.pth",
@@ -58,7 +66,11 @@ def mouse_main():
                     p0,
                 )
                 x, y = np.max(new, axis=0)
+                x, y = normalize_coord(x, 0, 2560), normalize_coord(y, 0, 1080)
+                x, y = to_screen_coords(x, y, 2560, 1080)
                 print("p:", x, y)
+                
+                # mouse.move_mouse(x, y)
                 # mouse.move_mouse_new(new)
             except Exception as e:
                 print(f"Error calculating optical flow: {e}")
@@ -86,11 +98,11 @@ def train():
 if __name__ == "__main__":
     mouse_main()
     # train()
-    # import sys
-    # from src.demo.demo import Demo
-    # from PyQt6.QtWidgets import QApplication
-
-    # App = QApplication(sys.argv)
-    # Root = Demo()
-    # Root.show()
-    # sys.exit(App.exec())
+    #import sys
+    #from src.demo.demo import Demo
+    #from PyQt6.QtWidgets import QApplication
+#
+    #App = QApplication(sys.argv)
+    #Root = Demo()
+    #Root.show()
+    #sys.exit(App.exec())

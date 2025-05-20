@@ -96,3 +96,5 @@ datasets/
 ibug/
 models/
 random_stuff/
+eyelib/
+test/

@@ -168,7 +168,7 @@ class Trainer:
             eta = (end_epoch - start_time) * (self.num_epochs - epoch) / epoch
             self.logger.info("\n--------------------------------------------------")
             self.logger.info(
-                f"""Epoch {epoch}/{self.num_epochs} completed in {end_epoch - start_epoch}s 
+                f"""Epoch {epoch}/{self.num_epochs} completed in {end_epoch - start_epoch}s
                  Train Loss: {loss_train:.4f}, Valid Loss: {loss_valid:.4f}, ETA {eta//60}m {eta%60}s"""
             )
             self.logger.info("--------------------------------------------------")

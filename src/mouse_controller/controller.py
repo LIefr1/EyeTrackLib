@@ -17,8 +17,7 @@ class MouseController(Controller):
         self.position = (x, y)
         pass
 
-    def click(self):
-        pass
+
 
     def right_click(self):
         pass

@@ -38,7 +38,7 @@ class Predictor:
                 landmarks = (landmarks.view(shape, 2).cpu().detach().numpy() + 0.5) * np.array(
                     [[w, h]]
                 ) + np.array([[x, y]])
-            print(landmarks)
+            # print(landmarks)
             return landmarks
         except Exception as e:
             print(e)

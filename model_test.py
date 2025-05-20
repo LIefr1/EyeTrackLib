@@ -182,45 +182,5 @@ def run_test_case(fullPath, gray_image, face_bbox, model_name):
     except Exception as e:
         print(f"Error occurred: {e}")
 
-    # Ensure the predictor_module is correctly imported and available for the above code to work.
-
-    # mypath = r"models"
-    # onlyfiles = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
-    # print(onlyfiles)
-    # for path in onlyfiles:
-    #     print(
-    #         f"---------------------------------------${path}--------------------------------------------"
-    #     )
-
-    #     fullPath = os.path.join(mypath, path)
-
-    #     # Create a dummy grayscale image and a face bounding box
-    #     gray_image = np.random.randint(0, 256, (500, 500), dtype=np.uint8)
-    #     face_bbox = (100, 100, 200, 200)  # Example face bounding box (x, y, width, height)
-
-    #     # Initialize the predictor
-    #     predictor = Predictor(
-    #         LandmarkModel(model_name="resnet152", num_classes=40),
-    #         path=fullPath,
-    #     )
-
-    #     # Perform prediction
-    #     landmarks, elapsed_time = predictor.predict(gray_image, face_bbox)
-
-    #     # Print the predicted landmarks and elapsed time
-    #     print("Predicted Landmarks:", landmarks)
-    #     print("Elapsed Time:", elapsed_time)
-
-    #     # Dummy ground truth for accuracy calculation
-    #     ground_truth_landmarks = np.random.rand(20, 2) * 200 + np.array([100, 100])
-
-    #     # Calculate accuracy (example: mean squared error)
-    #     mse = np.mean((landmarks - ground_truth_landmarks) ** 2)
-    #     print("Mean Squared Error:", mse)
-    #     print(
-    #         "---------------------------------------------------------------------------------------"
-    #     )
-
-
 if __name__ == "__main__":
     test_predictor()

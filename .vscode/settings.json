@@ -1,8 +1,4 @@
 {
-    "cSpell.words": [
-        "torchvision"
-    ],
-    "cSpell.enableFiletypes": [
-        "cuda-cpp"
-    ]
+	"cSpell.words": ["gazecapture", "torchvision"],
+	"cSpell.enableFiletypes": ["cuda-cpp"]
 }
