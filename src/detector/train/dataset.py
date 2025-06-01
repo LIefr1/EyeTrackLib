@@ -56,5 +56,5 @@ class Dataset(Dataset):
             image, landmarks = self.transform(image, landmarks, self.crops[index])
 
         landmarks = landmarks - 0.5
-
+        # print(image.shape, landmarks.shape)
         return image, landmarks

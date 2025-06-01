@@ -228,15 +228,8 @@ def validate(val_loader, model, criterion, epoch):
         # compute output
         with torch.no_grad():
             output = model(imFace, imEyeL, imEyeR, faceGrid)
-            coords = output.squeeze().cpu().numpy()
-            plt.scatter(coords[0], coords[1])
-            plt.title("Model Output")
-            plt.xlabel("X")
-            plt.ylabel("Y")
-            plt.grid(True)
-            plt.show()
-            sys.exit()
-            print(output)
+            # coords = output.squeeze().cpu().numpy()
+
 
         loss = criterion(output, gaze)
         

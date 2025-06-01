@@ -6,21 +6,22 @@ import numpy as np
 import torch.nn as nn
 from tqdm import trange, tqdm
 from datetime import datetime
+from src.detector.model import EnhancedLandmarkModel
 
 
 class Trainer:
     def __init__(
         self,
-        model=None,
+        model= EnhancedLandmarkModel(),
         dataset=None,
         criterion=nn.MSELoss(),
         optimizer=None,
         num_epochs=10,
     ):
         if model is None:
-            raise Exception("Network cannot be None")
+            raise Exception("Model cannot be None")
         self.model = model
-        self.model_name = self.model.get_model_name()
+        self.model_name = self.model._get_name()
         self.num_epochs = num_epochs
         if dataset is None:
             raise Exception("Dataset cannot be None")
@@ -64,10 +65,10 @@ class Trainer:
 
         # shuffle and batch the datasets
         train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=16, shuffle=True, num_workers=4
+            train_dataset, batch_size=32, shuffle=True, num_workers=16
         )
         valid_loader = torch.utils.data.DataLoader(
-            valid_dataset, batch_size=8, shuffle=True, num_workers=4
+            valid_dataset, batch_size=32, shuffle=True, num_workers=16
         )
         return train_loader, valid_loader, train_dataset, valid_dataset
 

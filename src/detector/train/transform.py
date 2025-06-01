@@ -64,4 +64,5 @@ class Transforms:
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # image = image.to(device)
         # landmarks = landmarks.view(landmarks.size(0), -1).to(device)
+        # print(image.shape, landmarks.shape)
         return image, landmarks

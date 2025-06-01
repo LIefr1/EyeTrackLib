@@ -1,4 +1,5 @@
-from src.detector.model import LandmarkModel
+from torchvision.models import resnet18, resnet101, resnet152, resnet50, resnet34
+from src.detector.model import EnhancedLandmarkModel
 from src.detector.train.trainer import Trainer
 from src.detector.train.dataset import Dataset
 from src.detector.train.transform import Transforms
@@ -8,7 +9,6 @@ import torch.optim as optim
 import cv2 as cv
 import numpy as np
 import sys
-
 
 def normalize_coord(x, min_val, max_val):
     return 2 * ((x - min_val) / (max_val - min_val)) - 1 
@@ -88,16 +88,16 @@ def mouse_main():
 
 
 def train():
-    model = LandmarkModel(model_name="resnet152", num_classes=40)
-    dataset = Dataset(Transforms())
+    model =  EnhancedLandmarkModel(resnet_model=resnet152(), num_classes=40)
+    dataset = Dataset(xml_path="./datasets/ibug/eyes_only.xml", dataset_dir="./datasets/ibug", transform=Transforms())
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=2)
+    trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=50, )
     trainer.train()
 
 
 if __name__ == "__main__":
-    mouse_main()
-    # train()
+    # mouse_main()
+    train()
     #import sys
     #from src.demo.demo import Demo
     #from PyQt6.QtWidgets import QApplication
