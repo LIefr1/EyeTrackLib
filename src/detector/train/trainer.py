@@ -17,19 +17,15 @@ class Trainer:
         criterion=nn.MSELoss(),
         optimizer=None,
         num_epochs=10,
+        batch_size=16
     ):
-        if model is None:
-            raise Exception("Model cannot be None")
         self.model = model
         self.model_name = self.model._get_name()
         self.num_epochs = num_epochs
-        if dataset is None:
-            raise Exception("Dataset cannot be None")
+        self.batch_size = batch_size
         self.dataset = dataset
-        self.log_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.log_time = datetime.now().strftime("%Y_%m_%d_%H:%M")
         self.criterion = criterion
-        if optimizer is None:
-            raise Exception("Optimizer cannot be None")
         self.optimizer = optimizer
 
         self.logger = logging.getLogger(__name__)
@@ -65,10 +61,10 @@ class Trainer:
 
         # shuffle and batch the datasets
         train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=32, shuffle=True, num_workers=16
+            train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=16
         )
         valid_loader = torch.utils.data.DataLoader(
-            valid_dataset, batch_size=32, shuffle=True, num_workers=16
+            valid_dataset, batch_size=self.batch_size, shuffle=True, num_workers=16
         )
         return train_loader, valid_loader, train_dataset, valid_dataset
 
@@ -87,7 +83,12 @@ class Trainer:
 
         torch.autograd.set_detect_anomaly(True)
         model = self.model
-
+        try: 
+            print(f"Model path: models/EnhancedLandmarkModel-2025-06-09_22-47-12.pth")
+            model.load_state_dict(torch.load("models/EnhancedLandmarkModel-2025_06_16_23:15.pth"))
+        except Exception as e:
+            self.logger.error(e)
+        
         loss_min = np.inf
 
         start_time = time.time()
@@ -153,12 +154,18 @@ class Trainer:
 
                         # find the loss for the current step
                         loss_valid_step = self.criterion(predictions, landmarks)
+                        print(predictions)
+                        print(landmarks)
 
                         loss_valid += loss_valid_step.item()
                         running_loss = loss_valid / (step + 1)
 
+                        mse = np.mean((predictions - landmarks) ** 2)
+                        mae = np.mean(np.abs(predictions - landmarks))
+                        rmse = np.sqrt(mse)
+                                        
                         pbar_valid.set_postfix(
-                            {"Valid Loss": f"{running_loss:.4f}", "Epoch": epoch}
+                            {"Valid Loss\n": f"{running_loss:.4f}", "Mean Absolute Error (MAE)\n": f"{mae:.4f}", "RMSE\n": f"{rmse:.4f}", "Epoch\n": epoch}
                         )
                         pbar_valid.update()
 

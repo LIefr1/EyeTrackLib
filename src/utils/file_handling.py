@@ -72,19 +72,19 @@ class FileHandling:
                 "31",
                 "36",
                 "09",
-                "68",
-                "69",
             ]
         )
         tree = ET.parse(file_path)
         root = tree.getroot()
-
+        print(root)
         for box in root.findall("./images/image/box"):
             parts = box.findall(".//part[@name]")
             for part in parts:
                 if part.get("name") not in eyes:
                     box.remove(part)
-        tree.write("datasets/ibug/eyes_only.xml")
+                else: 
+                    continue
+        tree.write(file_path + "_converted.xml")
 
     @staticmethod
     def calculate_centre(x1, y1, x2, y2):
@@ -103,7 +103,7 @@ class FileHandling:
                     C = box.findall(".//part[@name='40']")
                     x1, y1 = int(part.get("x")), int(part.get("y"))
                     x2, y2 = int(C[0].get("x")), int(C[0].get("y"))
-                    centre = self.calculate_centre(x1, y1, x2, y2)
+                    centre = self.calculate_centre(x1, y1, x2, y2) 
                     new_part = ET.Element(
                         "part", dict(name="68", x=str(int(centre[0])), y=str(int(centre[1])))
                     )
@@ -114,13 +114,11 @@ class FileHandling:
                     C = box.findall(".//part[@name='47']")
                     x1, y1 = int(part.get("x")), int(part.get("y"))
                     x2, y2 = int(C[0].get("x")), int(C[0].get("y"))
-                    scalar = self.__calc(x1, y1, x2, y2) / 2
-                    centre = (x1 + scalar, y1 + scalar)
-
+                    centre = self.calculate_centre(x1, y1, x2, y2)
                     new_part = ET.Element(
                         "part", dict(name="69", x=str(int(centre[0])), y=str(int(centre[1])))
                     )
                     box.insert(len(parts) + 1, new_part)
                     print("centre: ", centre, "x1: ", x1, "y1: ", y1, "x2: ", x2, "y2: ", y2)
 
-        tree.write("datasets/ibug/pupils.xml")
+        tree.write(file_path + "_converted.xml")

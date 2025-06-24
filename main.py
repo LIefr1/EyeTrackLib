@@ -10,6 +10,8 @@ import cv2 as cv
 import numpy as np
 import sys
 
+CV_FRAME = (2560, 1080)
+
 def normalize_coord(x, min_val, max_val):
     return 2 * ((x - min_val) / (max_val - min_val)) - 1 
     
@@ -19,18 +21,16 @@ def to_screen_coords(x,y, W, H):
 
 def mouse_main():
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1200)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 800)
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, CV_FRAME[0])
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, CV_FRAME[1])
     W = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
     H = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+    print(W, H)
 
-    mouse = MouseController(frame_w=W, frame_h=H)
     
     tracker = Tracker(
-        model=LandmarkModel(model_name="resnet152", num_classes=40),
-        path=r"models/resnet152-155-2024-06-10_08-21-07.pth",
+        model=EnhancedLandmarkModel(resnet_model=resnet152(), num_classes=40),
+        path="models/EnhancedLandmarkModel-2025_06_16_23:15.pth",
         lk_params=dict(
             winSize=(16, 16),
             maxLevel=4,
@@ -58,6 +58,7 @@ def mouse_main():
         largest_face = tracker.get_faces(frame_gray, get_largest_face=True)
 
         p0 = tracker.detect_landmarks(frame_gray, largest_face)
+        
         if p0.size > 0:
             try:
                 new, old = tracker.calculate_LK(
@@ -65,12 +66,12 @@ def mouse_main():
                     frame_gray,
                     p0,
                 )
+                print(f"frame count: {frame_count}\n new: {new}\n old: {old}")
                 x, y = np.max(new, axis=0)
-                x, y = normalize_coord(x, 0, 2560), normalize_coord(y, 0, 1080)
-                x, y = to_screen_coords(x, y, 2560, 1080)
+                #x, y = normalize_coord(x, 0, 2560), normalize_coord(y, 0, 1080)
+                #x, y = to_screen_coords(x, y, 2560, 1080)
                 print("p:", x, y)
                 
-                # mouse.move_mouse(x, y)
                 # mouse.move_mouse_new(new)
             except Exception as e:
                 print(f"Error calculating optical flow: {e}")
@@ -91,17 +92,17 @@ def train():
     model =  EnhancedLandmarkModel(resnet_model=resnet152(), num_classes=40)
     dataset = Dataset(xml_path="./datasets/ibug/eyes_only.xml", dataset_dir="./datasets/ibug", transform=Transforms())
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=50, )
+    trainer = Trainer(model=model, dataset=dataset, optimizer=optimizer, num_epochs=75, )
     trainer.train()
 
 
 if __name__ == "__main__":
-    # mouse_main()
-    train()
+    mouse_main()
+    #train()
     #import sys
     #from src.demo.demo import Demo
     #from PyQt6.QtWidgets import QApplication
-#
+
     #App = QApplication(sys.argv)
     #Root = Demo()
     #Root.show()

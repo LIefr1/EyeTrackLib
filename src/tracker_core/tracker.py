@@ -89,10 +89,6 @@ class Tracker:
 
     def draw(self, frame, points, mask):
         new, old = points
-        # print("new, old: \n", new, old)
-        # sys.exit()
-        # print("i am here")
-        # print("new, old: \n", new, old)
 
         for i, (new, old) in enumerate(zip(new, old)):
             x_new, y_new = new.ravel()  # flatten the array to a 1-dimensional array
@@ -106,7 +102,7 @@ class Tracker:
             #     self.color[i].tolist(),
             #     2,
             # )
-            # cv.circle(frame, (int(x_new), int(y_new)), 3, self.color[i].tolist(), -1)
+            cv.circle(frame, (int(x_new), int(y_new)), 3, self.color[i].tolist(), -1)
             cv.putText(
                 frame,
                 str(i),

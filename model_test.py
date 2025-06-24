@@ -1,10 +1,4 @@
-import os
-import sys
-import torch
 import torch.nn as nn
-from src.detector.model import LandmarkModel
-
-# from src.tracker_core.landmark_predictor import Predictor
 import time
 import numpy as np
 import torch
@@ -12,9 +6,9 @@ import logging
 from PIL import Image
 from torchvision.transforms.functional import resize, to_tensor, normalize
 from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152
-import torch.nn as nn
 from typing import Literal
-
+from src.detector.model import EnhancedLandmarkModel
+import cv2 as cv
 # Assuming LandmarkModel is already defined and imported
 
 
@@ -22,11 +16,7 @@ def test_landmark_model():
     # Create a model instance
     num_classes = 40
     model_name = "resnet152"
-    model = LandmarkModel(
-        num_classes=num_classes,
-        model_name=model_name,
-    )
-
+    model = LandmarkModel(num_classes=num_classes, resnet_model=resnet152())
     # Print the model architecture
     print(model)
 
@@ -103,84 +93,74 @@ class Predictor:
         return np.empty((68, 2))
 
 
-def test_predictor():
-    mypath = r"models"
-    onlyfiles = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
-    for f in onlyfiles:
-        print(f)
+import cv2 as cv
+import numpy as np
+from torchvision.models import resnet152
 
-    for path in onlyfiles[: len(onlyfiles) // 2]:
-        model_name = path.split("-")[0]
-        print(
-            f"---------------------------------------${path}--------------------------------------------"
-        )
-
-        fullPath = os.path.join(mypath, path)
-
-        # Test 1: Standard Test Case
-        gray_image = np.random.randint(0, 256, (500, 500), dtype=np.uint8)
-        face_bbox = (100, 100, 200, 200)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-        # Test 2: Different Image Sizes
-        print("Test 2: Different Image Sizes")
-        gray_image = np.random.randint(0, 256, (1000, 1000), dtype=np.uint8)
-        face_bbox = (200, 200, 400, 400)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-        # Test 3: Small Face Bounding Box
-        print("Test 3: Small Face Bounding Box")
-        gray_image = np.random.randint(0, 256, (500, 500), dtype=np.uint8)
-        face_bbox = (150, 150, 50, 50)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-        # Test 4: Large Face Bounding Box
-        print("Test 4: Large Face Bounding Box")
-        gray_image = np.random.randint(0, 256, (500, 500), dtype=np.uint8)
-        face_bbox = (50, 50, 400, 400)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-        # Test 5: Empty Image
-        print("Test 5: Empty Image")
-        gray_image = np.zeros((500, 500), dtype=np.uint8)
-        face_bbox = (100, 100, 200, 200)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-        # Test 6: No Face Bounding Box
-        print("Test 6: No Face Bounding Box")
-        gray_image = np.random.randint(0, 256, (500, 500), dtype=np.uint8)
-        face_bbox = (0, 0, 0, 0)
-        run_test_case(fullPath, gray_image, face_bbox, model_name)
-
-
-def run_test_case(fullPath, gray_image, face_bbox, model_name):
-    # Initialize the predictor
+def run_test_case():
     predictor = Predictor(
-        LandmarkModel(model_name=model_name, num_classes=40),
-        path=fullPath,
+        EnhancedLandmarkModel(num_classes=40,
+                              resnet_model=resnet152(weights=None)),       
+        path="models/EnhancedLandmarkModel-2025_06_16_23:15.pth"
     )
 
-    # Perform prediction
-    try:
-        landmarks, elapsed_time = predictor.predict(gray_image, face_bbox)
+    img_path = "datasets/ibug/ibug/image_031_mirror.jpg"
+    frame      = cv.imread(img_path)
+    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        # Print the predicted landmarks and elapsed time
-        print("Predicted Landmarks:", landmarks)
-        print("Elapsed Time:", elapsed_time)
+    gt = np.array([
+                    [308,385],
+[703,639],
+[268,301],
+[455,500],
+[479,513],
+[325,326],
+[341,312],
+[374,304],
+[414,314],
+[384,335],
+[354,340],
+[537,282],
+[564,255],
+[600,234],
+[642,239],
+[621,266],
+[577,281],
+[482,568],
+[365,336],
+[578,269],
+    ], dtype=np.float32)
 
-        # Dummy ground truth for accuracy calculation
-        ground_truth_landmarks = np.random.rand(20, 2) * 200 + np.array([100, 100])
+    pred, elapsed = predictor.predict(frame_gray, [ 290, 154,481,493])
+    pred = np.array(pred, dtype=np.float32)
 
-        # Calculate accuracy metrics
-        mse = np.mean((landmarks - ground_truth_landmarks) ** 2)
-        mae = np.mean(np.abs(landmarks - ground_truth_landmarks))
-        rmse = np.sqrt(mse)
+    mse  = np.mean((pred - gt) ** 2)
+    mae  = np.mean(np.abs(pred - gt))
+    rmse = np.sqrt(mse)
 
-        print("Mean Squared Error (MSE):", mse)
-        print("Mean Absolute Error (MAE):", mae)
-        print("Root Mean Squared Error (RMSE):", rmse)
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    print(f"Predicted  :\n{pred}")
+    print(f"Elapsed    : {elapsed:.3f} s")
+    print(f"MAE   ={mae:.3f}, RMSE  ={rmse:.3f}")
+
+    out = frame.copy()
+    for (x, y) in gt.astype(int):
+        cv.circle(out, (x, y), radius=3, color=(0,255,0), thickness=-1)
+    for (x, y) in pred.astype(int):
+        cv.circle(out, (x, y), radius=3, color=(0,0,255), thickness=-1)
+
+    x, y, w, h = [ 290, 154,481,493]
+    cv.rectangle(out, (x, y), (x+w, y+h), (255,0,0), 1)
+
+    out_path = "landmark_comparison.jpg"
+    cv.imwrite(out_path, out)
+    print(f"Saved overlay to {out_path}")
+
+
+
+
 
 if __name__ == "__main__":
-    test_predictor()
+    run_test_case()
+
+
+
