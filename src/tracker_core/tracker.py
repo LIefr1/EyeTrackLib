@@ -12,8 +12,8 @@ class Tracker:
         path,
         feature_params=dict(maxCorners=50, qualityLevel=0.3, minDistance=7, blockSize=7),
         lk_params=dict(
-            winSize=(244, 244),
-            maxLevel=2,
+            winSize=(15, 15),
+            maxLevel=3,
             criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03),
         ),
     ):

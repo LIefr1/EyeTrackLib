@@ -21,9 +21,9 @@ def to_screen_coords(x,y, W, H):
 
 def mouse_main():
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, CV_FRAME[0])
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, CV_FRAME[1])
-    W = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 2560.0)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080.0)
+    W = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))   
     H = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
     print(W, H)
 
@@ -72,7 +72,7 @@ def mouse_main():
                 #x, y = to_screen_coords(x, y, 2560, 1080)
                 print("p:", x, y)
                 
-                # mouse.move_mouse_new(new)
+               
             except Exception as e:
                 print(f"Error calculating optical flow: {e}")
 
@@ -97,13 +97,13 @@ def train():
 
 
 if __name__ == "__main__":
-    mouse_main()
+   #mouse_main()
     #train()
-    #import sys
-    #from src.demo.demo import Demo
-    #from PyQt6.QtWidgets import QApplication
+    import sys
+    # from src.demo.demo import Demo
+    # from PyQt6.QtWidgets import QApplication
 
-    #App = QApplication(sys.argv)
-    #Root = Demo()
-    #Root.show()
-    #sys.exit(App.exec())
+    # App = QApplication(sys.argv)
+    # Root = Demo()
+    # Root.show()
+    # sys.exit(App.exec())
